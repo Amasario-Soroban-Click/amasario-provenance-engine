@@ -35,11 +35,11 @@ tested, and is pushed only when it is complete. The current state is:
 | `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 75 tests |
 | `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 74 tests |
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
-| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | not implemented |
+| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 28 tests |
 | `amasario-export` | JSON, YAML, GraphML and DOT export | not implemented |
 | `amasario-cli` | The `amasario` command-line interface | not implemented |
 
-`cargo test --all-features` passes 854 tests across the nine crates above, including
+`cargo test --all-features` passes 902 tests across the ten crates above, including
 the per-crate integration suites (`amasario-core`, `amasario-graph` and
 `amasario-impact`). The nine specification-conformance tests in `amasario-core` are
 `#[ignore]`d by default because they read a checkout of the normative specification;
@@ -49,11 +49,27 @@ Nothing in the table is a placeholder: a crate is listed as implemented only whe
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
 as existing.
 
-`amasario-report`, `amasario-export` and `amasario-cli` are declared in
-`[workspace.dependencies]` because their manifests are already anticipated, but the
-crates themselves are absent. The workspace currently builds libraries only: there is
-no `amasario` binary and no CLI surface until `amasario-cli` is implemented. Until
-then the crates are consumed as a Rust library set.
+`amasario-export` and `amasario-cli` are declared in `[workspace.dependencies]`
+because their manifests are already anticipated, but the crates themselves are absent.
+The workspace currently builds libraries only: there is no `amasario` binary and no CLI
+surface until `amasario-cli` is implemented. Until then the crates are consumed as a
+Rust library set.
+
+## Document conformance
+
+The specification's schemas set `additionalProperties: false` and name their fields in
+camelCase, so an engine document is either exactly the schema's shape or it is rejected.
+The projections in `amasario-dependency`, `amasario-evidence` and `amasario-graph` are
+validated against the published schemas themselves, and `GraphDocument`,
+`DependencyDocument`, `DependencySetDocument`, `EvidenceDocument` and `Report` are all
+checked to validate with zero errors.
+
+A projection exists wherever the engine's internal model is richer than the document it
+publishes - `GraphDocument` over `Graph`, `DependencyDocument` over `Dependency`,
+`EvidenceDocument` over `EvidenceRecord`. The detail with no schema field is either
+placed in the schema's one open object, `metadata`, or dropped with the loss written
+down in the module that drops it. It is never renamed into a field that means something
+else.
 
 ## The four invariants `amasario-core` enforces
 

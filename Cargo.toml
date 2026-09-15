@@ -9,6 +9,7 @@ members = [
   "crates/amasario-graph",
   "crates/amasario-impact",
   "crates/amasario-provenance",
+  "crates/amasario-report",
   "crates/amasario-snapshot",
 ]
 

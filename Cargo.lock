@@ -131,6 +131,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "amasario-report"
+version = "1.0.0"
+dependencies = [
+ "amasario-core",
+ "amasario-dependency",
+ "amasario-evidence",
+ "amasario-graph",
+ "amasario-impact",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "amasario-snapshot"
 version = "1.0.0"
 dependencies = [
