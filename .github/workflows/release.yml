@@ -115,7 +115,13 @@ jobs:
 
   github-release:
     name: create the GitHub release
-    needs: publish
+    # `validate` is listed as well as `publish`, because the release notes are cut from
+    # the changelog section for the version `validate` resolved. With only `publish` in
+    # this list the `needs.validate` context is empty, so the version would interpolate
+    # as the empty string and the notes step would look for a `## []` heading that does
+    # not exist. Listing both also means the release cannot be published for a tag that
+    # failed validation.
+    needs: [validate, publish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
