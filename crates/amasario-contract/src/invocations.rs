@@ -307,14 +307,21 @@ pub fn invocations_from_transaction(
 
     let diagnostics_available = !observation.diagnostic_events.is_empty();
     let nesting_recovered = if diagnostics_available {
-        let nested = invocations_from_diagnostics(
+        let entered = invocations_from_diagnostics(
             &observation.diagnostic_events,
             &transaction,
             ledger,
             succeeded,
         );
-        let recovered = !nested.is_empty();
-        invocations.extend(nested);
+        // Nesting was recovered when at least one call arrived from an enclosing call,
+        // which is what a caller on the invocation means. It is *not* the same as "the
+        // diagnostics yielded calls": a transaction that enters one contract and calls
+        // nothing further has a root `fn_call` marker with no caller, so counting any
+        // recovered call as recovered nesting reports nesting where the evidence shows
+        // none - and "this transaction nested" and "this transaction did not nest" would
+        // become indistinguishable, which is the distinction a control case exists for.
+        let recovered = entered.iter().any(|invocation| invocation.caller.is_some());
+        invocations.extend(entered);
         recovered
     } else {
         false
@@ -920,6 +927,45 @@ mod tests {
         assert!(
             !observations.nesting_recovered,
             "nothing was recovered, and claiming otherwise would overstate the evidence"
+        );
+    }
+
+    #[test]
+    fn a_single_top_level_call_is_not_recovered_nesting() {
+        // The distinction a control case exists for, and one that was wrong: a
+        // transaction that enters one contract and calls nothing further emits a root
+        // `fn_call` marker whose caller is absent. Counting any recovered call as
+        // recovered nesting made this transaction indistinguishable from one that
+        // nested, so a consumer asking whether the tree was reconstructed was told yes
+        // when all that had been read was a single entry. Diagnostics being available
+        // and nesting having been found are different facts, and both are reported.
+        let a = [1_u8; 32];
+        let diagnostics = vec![fn_call(a, "set_price")];
+
+        let observations =
+            invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");
+
+        assert!(
+            observations.diagnostics_available,
+            "the host's diagnostics were read, which is a fact about the reading"
+        );
+        assert!(
+            !observations.nesting_recovered,
+            "one call with no caller is a call tree of depth one, which is not recovered \
+             nesting"
+        );
+        assert_eq!(
+            observations.invocations.len(),
+            1,
+            "the call is still recorded: reading no nesting does not mean reading no call"
+        );
+        assert_eq!(
+            observations.invocations[0].caller, None,
+            "a root call has no calling contract"
+        );
+        assert!(
+            observations.cross_contract_edges().is_empty(),
+            "a root call is not an edge between contracts"
         );
     }
 
