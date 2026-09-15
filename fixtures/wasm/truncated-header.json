@@ -1,0 +1,10 @@
+{
+  "name": "truncated-header",
+  "note": "the magic number with no version word: the pre-check accepts it and the decoder must not",
+  "hex": "0061736d",
+  "byteSize": 4,
+  "digest": "cd5d4935a48c0672cb06407bb443bc0087aff947c6b864bac886982c73b3027f",
+  "digestAlgorithm": "sha256",
+  "magicPresent": true,
+  "isAModule": false
+}

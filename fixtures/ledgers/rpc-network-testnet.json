@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "passphrase": "Test SDF Network ; September 2015",
+    "protocolVersion": 22,
+    "friendbotUrl": "https://friendbot.stellar.org"
+  }
+}

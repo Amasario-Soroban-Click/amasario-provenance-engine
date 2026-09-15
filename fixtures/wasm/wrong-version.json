@@ -1,0 +1,10 @@
+{
+  "name": "wrong-version",
+  "note": "the right magic and the wrong version word, which only a version check catches",
+  "hex": "0061736d02000000",
+  "byteSize": 8,
+  "digest": "593ab0b4d166fc4aa2d6956ea38019e2c575134f8139b0a18235f7abd595103f",
+  "digestAlgorithm": "sha256",
+  "magicPresent": true,
+  "isAModule": false
+}

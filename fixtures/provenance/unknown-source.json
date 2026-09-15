@@ -1,0 +1,27 @@
+{
+  "contract": {
+    "kind": "CONTRACT",
+    "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+  },
+  "links": [
+    {
+      "kind": "DEPLOYMENT_TO_CONTRACT",
+      "subject": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "object": {
+        "kind": "DEPLOYMENT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG@1044"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "UNKNOWN",
+        "evidence": [
+          "e-observation-1"
+        ]
+      },
+      "verification": "UNVERIFIED"
+    }
+  ]
+}

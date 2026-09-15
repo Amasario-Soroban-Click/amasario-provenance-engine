@@ -135,6 +135,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "amasario-integration-tests"
+version = "1.0.0"
+dependencies = [
+ "amasario-contract",
+ "amasario-core",
+ "amasario-dependency",
+ "amasario-evidence",
+ "amasario-export",
+ "amasario-graph",
+ "amasario-impact",
+ "amasario-network",
+ "amasario-provenance",
+ "amasario-report",
+ "amasario-snapshot",
+ "hex",
+ "serde",
+ "serde_json",
+ "stellar-strkey 0.0.18",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+ "wiremock",
+]
+
+[[package]]
 name = "amasario-network"
 version = "1.0.0"
 dependencies = [

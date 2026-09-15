@@ -1,0 +1,10 @@
+{
+  "name": "export-without-spec",
+  "note": "a valid module exporting `greet` and declaring no contract spec section, so no contract interface may be reported for it",
+  "hex": "0061736d01000000010401600000030201000709010567726565740000",
+  "byteSize": 29,
+  "digest": "568b5c934c88d6ca30081f793f6e6ba1628008d983a9c3ddc24c51f509afe0e7",
+  "digestAlgorithm": "sha256",
+  "magicPresent": true,
+  "isAModule": true
+}

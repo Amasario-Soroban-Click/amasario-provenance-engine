@@ -1,0 +1,233 @@
+[
+  {
+    "id": "8e4cb99f73742457001333ade384f9d5a11edc17df6132090a2839d6f68d8645",
+    "changed_entity": {
+      "kind": "CONTRACT",
+      "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+    },
+    "affected_entity": {
+      "kind": "CONTRACT",
+      "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+    },
+    "impact_type": [
+      "DIRECT",
+      "CONTRACT",
+      "CHANGE"
+    ],
+    "hop_depth": 1,
+    "path": {
+      "nodes": [
+        {
+          "kind": "CONTRACT",
+          "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+        },
+        {
+          "kind": "CONTRACT",
+          "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+        }
+      ],
+      "steps": [
+        {
+          "source": {
+            "kind": "CONTRACT",
+            "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+          },
+          "target": {
+            "kind": "CONTRACT",
+            "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+          },
+          "relationship": "INVOCATES",
+          "edge_id": "bb6ab27bf6931982704471fd2527f44e48685bf60b1bcc12d81a95671480379a",
+          "direction": "inverted",
+          "evidence": [
+            {
+              "id": "0404040404040404040404040404040404040404040404040404040404040404",
+              "kind": "TRANSACTION"
+            }
+          ],
+          "confidence": {
+            "level": "VERIFIED",
+            "evidence": [
+              "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404"
+            ],
+            "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+          }
+        }
+      ],
+      "hop_depth": 1,
+      "direction": "DEPENDENTS",
+      "termination": "TARGET_REACHED",
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404"
+        ],
+        "rationale": "minimum ordinal across 1 step(s), as taxonomies/confidence-levels.yaml requires"
+      }
+    },
+    "relationship_types": [
+      "INVOCATES"
+    ],
+    "direction": "DEPENDENTS",
+    "change_type": "MODIFIED",
+    "evidence": [
+      {
+        "id": "0404040404040404040404040404040404040404040404040404040404040404",
+        "kind": "TRANSACTION"
+      }
+    ],
+    "confidence": {
+      "level": "VERIFIED",
+      "evidence": [
+        "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404"
+      ],
+      "rationale": "minimum ordinal across 1 step(s), as taxonomies/confidence-levels.yaml requires"
+    },
+    "reason": "a change to CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 reaches CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 in 1 hop: CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 <- INVOCATES CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3",
+    "verification_state": null,
+    "boundary": {
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "ledger": 1044,
+      "observedAt": "2026-01-01T00:00:00Z"
+    },
+    "truncated": true
+  },
+  {
+    "id": "80e90b804075747300acd08771b59debb368a87f4e7ffb02c4be97c0522e060f",
+    "changed_entity": {
+      "kind": "CONTRACT",
+      "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+    },
+    "affected_entity": {
+      "kind": "CONTRACT",
+      "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+    },
+    "impact_type": [
+      "TRANSITIVE",
+      "CONTRACT",
+      "CHANGE"
+    ],
+    "hop_depth": 2,
+    "path": {
+      "nodes": [
+        {
+          "kind": "CONTRACT",
+          "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+        },
+        {
+          "kind": "CONTRACT",
+          "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+        },
+        {
+          "kind": "CONTRACT",
+          "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+        }
+      ],
+      "steps": [
+        {
+          "source": {
+            "kind": "CONTRACT",
+            "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+          },
+          "target": {
+            "kind": "CONTRACT",
+            "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+          },
+          "relationship": "INVOCATES",
+          "edge_id": "bb6ab27bf6931982704471fd2527f44e48685bf60b1bcc12d81a95671480379a",
+          "direction": "inverted",
+          "evidence": [
+            {
+              "id": "0404040404040404040404040404040404040404040404040404040404040404",
+              "kind": "TRANSACTION"
+            }
+          ],
+          "confidence": {
+            "level": "VERIFIED",
+            "evidence": [
+              "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404"
+            ],
+            "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+          }
+        },
+        {
+          "source": {
+            "kind": "CONTRACT",
+            "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+          },
+          "target": {
+            "kind": "CONTRACT",
+            "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+          },
+          "relationship": "INVOCATES",
+          "edge_id": "31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714",
+          "direction": "inverted",
+          "evidence": [
+            {
+              "id": "0303030303030303030303030303030303030303030303030303030303030303",
+              "kind": "TRANSACTION"
+            }
+          ],
+          "confidence": {
+            "level": "VERIFIED",
+            "evidence": [
+              "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+            ],
+            "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+          }
+        }
+      ],
+      "hop_depth": 2,
+      "direction": "DEPENDENTS",
+      "termination": "MAX_DEPTH_REACHED",
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404",
+          "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+        ],
+        "rationale": "minimum ordinal across 2 step(s), as taxonomies/confidence-levels.yaml requires"
+      }
+    },
+    "relationship_types": [
+      "INVOCATES",
+      "INVOCATES"
+    ],
+    "direction": "DEPENDENTS",
+    "change_type": "MODIFIED",
+    "evidence": [
+      {
+        "id": "0404040404040404040404040404040404040404040404040404040404040404",
+        "kind": "TRANSACTION"
+      },
+      {
+        "id": "0303030303030303030303030303030303030303030303030303030303030303",
+        "kind": "TRANSACTION"
+      }
+    ],
+    "confidence": {
+      "level": "VERIFIED",
+      "evidence": [
+        "TRANSACTION:0404040404040404040404040404040404040404040404040404040404040404",
+        "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+      ],
+      "rationale": "minimum ordinal across 2 step(s), as taxonomies/confidence-levels.yaml requires"
+    },
+    "reason": "a change to CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 reaches CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K in 2 hops: CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 <- INVOCATES CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3, then CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 <- INVOCATES CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+    "verification_state": null,
+    "boundary": {
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "ledger": 1044,
+      "observedAt": "2026-01-01T00:00:00Z"
+    },
+    "truncated": true
+  }
+]

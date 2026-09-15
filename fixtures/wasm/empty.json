@@ -1,0 +1,10 @@
+{
+  "name": "empty",
+  "note": "a valid module with no sections at all, so nothing can be decoded from it",
+  "hex": "0061736d01000000",
+  "byteSize": 8,
+  "digest": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+  "digestAlgorithm": "sha256",
+  "magicPresent": true,
+  "isAModule": true
+}

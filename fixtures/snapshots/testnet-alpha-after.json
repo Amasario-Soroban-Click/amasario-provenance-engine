@@ -1,0 +1,795 @@
+{
+  "apiVersion": "amasario.dev/v1",
+  "specVersion": "1.0.0",
+  "id": "snapshot-b48d9fd70a9ca22de6b0e4683a6c105c",
+  "capturedAt": "2026-01-02T00:00:00Z",
+  "boundary": {
+    "network": {
+      "id": "testnet",
+      "type": "TESTNET",
+      "passphrase": "Test SDF Network ; September 2015"
+    },
+    "ledger": 1044,
+    "observedAt": "2026-01-01T00:00:00Z"
+  },
+  "network": {
+    "id": "testnet",
+    "type": "TESTNET",
+    "passphrase": "Test SDF Network ; September 2015"
+  },
+  "ledgerBoundary": 1044,
+  "contract": {
+    "contractId": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+    "networkId": "testnet",
+    "passphrase": "Test SDF Network ; September 2015",
+    "executableKind": "WASM",
+    "wasmHash": {
+      "algorithm": "sha256",
+      "value": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+    },
+    "resolvedAtLedger": 1044,
+    "identityVersion": "amasario/contract-identity/v1"
+  },
+  "wasm": {
+    "digest": {
+      "algorithm": "sha256",
+      "value": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+    },
+    "artifactType": "WASM",
+    "byteSize": 31,
+    "evidence": [
+      "e-artifact-1"
+    ]
+  },
+  "provenance": {
+    "contract": {
+      "kind": "CONTRACT",
+      "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+    },
+    "links": [
+      {
+        "kind": "SOURCE_RESOLVED",
+        "subject": {
+          "kind": "SOURCE",
+          "id": "amasario-provenance-engine"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-source-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      },
+      {
+        "kind": "SOURCE_TO_BUILD",
+        "subject": {
+          "kind": "BUILD",
+          "id": "amasario-cli-1.0.0"
+        },
+        "object": {
+          "kind": "SOURCE",
+          "id": "amasario-provenance-engine"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-build-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      },
+      {
+        "kind": "BUILD_TO_ARTIFACT",
+        "subject": {
+          "kind": "ARTIFACT",
+          "id": "amasario_cli.wasm"
+        },
+        "object": {
+          "kind": "BUILD",
+          "id": "amasario-cli-1.0.0"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-build-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      },
+      {
+        "kind": "ARTIFACT_TO_WASM",
+        "subject": {
+          "kind": "WASM",
+          "id": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+        },
+        "object": {
+          "kind": "ARTIFACT",
+          "id": "amasario_cli.wasm"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-artifact-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      },
+      {
+        "kind": "WASM_TO_DEPLOYMENT",
+        "subject": {
+          "kind": "WASM",
+          "id": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+        },
+        "object": {
+          "kind": "DEPLOYMENT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG@1044"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-deployment-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      },
+      {
+        "kind": "DEPLOYMENT_TO_CONTRACT",
+        "subject": {
+          "kind": "CONTRACT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+        },
+        "object": {
+          "kind": "DEPLOYMENT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG@1044"
+        },
+        "basis": "EMBEDDED_DIGEST",
+        "confidence": {
+          "level": "HIGH_CONFIDENCE",
+          "evidence": [
+            "e-deployment-1"
+          ]
+        },
+        "verification": "VERIFIED"
+      }
+    ]
+  },
+  "dependencies": {
+    "subject": {
+      "kind": "CONTRACT",
+      "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+    },
+    "boundary": {
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "ledger": 1044,
+      "observedAt": "2026-01-01T00:00:00Z"
+    },
+    "maxDepth": 3,
+    "direct": [
+      {
+        "subject": {
+          "kind": "CONTRACT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+        },
+        "object": {
+          "kind": "CONTRACT",
+          "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+        },
+        "relationship": "INVOCATES",
+        "classes": [
+          "CONTRACT",
+          "RUNTIME"
+        ],
+        "basis": "OBSERVED_INVOCATION",
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+          ],
+          "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+        },
+        "verification": "VERIFIED",
+        "evidence": [
+          {
+            "id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "kind": "TRANSACTION"
+          }
+        ],
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called transfer on CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K, in ledger 1044, established by the OBSERVED_INVOCATION basis, observed on testnet",
+        "observedAt": {
+          "network": {
+            "id": "testnet",
+            "type": "TESTNET",
+            "passphrase": "Test SDF Network ; September 2015"
+          },
+          "ledger": 1044,
+          "observedAt": "2026-01-01T00:00:00Z"
+        }
+      },
+      {
+        "subject": {
+          "kind": "CONTRACT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+        },
+        "object": {
+          "kind": "CONTRACT",
+          "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+        },
+        "relationship": "INVOCATES",
+        "classes": [
+          "CONTRACT",
+          "RUNTIME"
+        ],
+        "basis": "OBSERVED_INVOCATION",
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0202020202020202020202020202020202020202020202020202020202020202"
+          ],
+          "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+        },
+        "verification": "VERIFIED",
+        "evidence": [
+          {
+            "id": "0202020202020202020202020202020202020202020202020202020202020202",
+            "kind": "TRANSACTION"
+          }
+        ],
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called balance on CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3, in ledger 1044, established by the OBSERVED_INVOCATION basis, observed on testnet",
+        "observedAt": {
+          "network": {
+            "id": "testnet",
+            "type": "TESTNET",
+            "passphrase": "Test SDF Network ; September 2015"
+          },
+          "ledger": 1044,
+          "observedAt": "2026-01-01T00:00:00Z"
+        }
+      },
+      {
+        "subject": {
+          "kind": "CONTRACT",
+          "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+        },
+        "object": {
+          "kind": "CONTRACT",
+          "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+        },
+        "relationship": "INVOCATES",
+        "classes": [
+          "CONTRACT",
+          "RUNTIME"
+        ],
+        "basis": "OBSERVED_EVENT",
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0909090909090909090909090909090909090909090909090909090909090909",
+            "EVENT:event-09-1"
+          ],
+          "rationale": "the OBSERVED_EVENT basis sets a ceiling of VERIFIED"
+        },
+        "verification": "VERIFIED",
+        "evidence": [
+          {
+            "id": "0909090909090909090909090909090909090909090909090909090909090909",
+            "kind": "TRANSACTION"
+          },
+          {
+            "id": "event-09-1",
+            "kind": "EVENT"
+          }
+        ],
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called settle on CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5, in ledger 1044, established by the OBSERVED_EVENT basis, observed on testnet",
+        "observedAt": {
+          "network": {
+            "id": "testnet",
+            "type": "TESTNET",
+            "passphrase": "Test SDF Network ; September 2015"
+          },
+          "ledger": 1044,
+          "observedAt": "2026-01-01T00:00:00Z"
+        }
+      }
+    ],
+    "unestablished": [
+      {
+        "object": {
+          "kind": "CONTRACT",
+          "id": "CDS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6KCXD"
+        },
+        "relationship": "INVOCATES",
+        "basis": "OBSERVED_INVOCATION",
+        "reason": "the endpoint did not report whether the invocation succeeded, and an unknown outcome is not a successful one",
+        "detail": "alpha called mint on the contract at 0xe5"
+      }
+    ],
+    "truncated": false
+  },
+  "graph": {
+    "apiVersion": "amasario.dev/v1",
+    "specVersion": "1.0.0",
+    "id": "amasario.transitive",
+    "nodes": [
+      {
+        "id": "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+        "kind": "CONTRACT"
+      },
+      {
+        "id": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+        "kind": "CONTRACT"
+      },
+      {
+        "id": "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3",
+        "kind": "CONTRACT"
+      }
+    ],
+    "edges": [
+      {
+        "id": "71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef",
+        "source": "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+        "target": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+        "relationship": "INVOCATES",
+        "evidence": [
+          "0101010101010101010101010101010101010101010101010101010101010101"
+        ],
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+          ],
+          "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+        },
+        "boundary": {
+          "network": {
+            "id": "testnet",
+            "type": "TESTNET",
+            "passphrase": "Test SDF Network ; September 2015"
+          },
+          "ledger": 1044,
+          "observedAt": "2026-01-01T00:00:00Z"
+        },
+        "observed": true
+      },
+      {
+        "id": "31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714",
+        "source": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+        "target": "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3",
+        "relationship": "INVOCATES",
+        "evidence": [
+          "0303030303030303030303030303030303030303030303030303030303030303"
+        ],
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+          ],
+          "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+        },
+        "boundary": {
+          "network": {
+            "id": "testnet",
+            "type": "TESTNET",
+            "passphrase": "Test SDF Network ; September 2015"
+          },
+          "ledger": 1044,
+          "observedAt": "2026-01-01T00:00:00Z"
+        },
+        "observed": true
+      }
+    ],
+    "boundary": {
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "ledger": 1044,
+      "observedAt": "2026-01-01T00:00:00Z"
+    },
+    "metadata": {
+      "directed": true,
+      "cyclic": false,
+      "nodeCount": 3,
+      "edgeCount": 2,
+      "truncated": false,
+      "disconnectedNodes": []
+    }
+  },
+  "evidence": [
+    {
+      "id": "e-artifact-1",
+      "class": "ARTIFACT",
+      "claim": "the built module's digest was computed over its bytes",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "digest": {
+        "algorithm": "sha256",
+        "value": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+      },
+      "artifactType": "WASM"
+    },
+    {
+      "id": "e-build-1",
+      "class": "BUILD",
+      "claim": "the build recorded its toolchain and configuration",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "toolchain": "rustc 1.93.0",
+      "configurationDigest": {
+        "algorithm": "sha256",
+        "value": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    },
+    {
+      "id": "e-deployment-1",
+      "class": "DEPLOYMENT",
+      "claim": "the deployment operation is recorded in the ledger",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "contractId": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+      "transaction": "9f2a7c1e4b8d3f6a0c5e2b9d7f4a1c8e6b3d0f9a2c7e4b1d8f5a2c9e6b3d0f7a",
+      "ledger": 1044,
+      "successful": true
+    },
+    {
+      "id": "e-observation-1",
+      "class": "OBSERVATION",
+      "claim": "the contract's instance entry was present at this boundary",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "observationNote": "the instance entry was returned by the endpoint"
+    },
+    {
+      "id": "e-source-1",
+      "class": "SOURCE",
+      "claim": "the repository declares the revision the build used",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "repository": "https://github.com/Amasario-Soroban-Click/amasario-provenance-engine",
+      "revision": "3f2c1a0d9e8b7c6f5a4b3c2d1e0f9a8b7c6d5e4f"
+    },
+    {
+      "id": "e-transaction-1",
+      "class": "TRANSACTION",
+      "claim": "the deployment transaction is recorded in the ledger",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "contractId": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+      "transaction": "9f2a7c1e4b8d3f6a0c5e2b9d7f4a1c8e6b3d0f9a2c7e4b1d8f5a2c9e6b3d0f7a",
+      "ledger": 1044,
+      "successful": true
+    }
+  ],
+  "confidence": {
+    "level": "LOW_CONFIDENCE",
+    "evidence": [
+      "e-artifact-1",
+      "e-build-1",
+      "e-deployment-1",
+      "e-observation-1",
+      "e-source-1",
+      "e-transaction-1"
+    ],
+    "rationale": "the level is the weakest of 6 evidence record(s) and 2 impact finding(s) at this boundary, per the vocabulary's minimum-ordinal aggregation"
+  },
+  "impact": [
+    {
+      "id": "3ba2cf0f5b50825d8316da0000a706e3c60c2a32fddd1419423676dee4a4d18e",
+      "changed_entity": {
+        "kind": "CONTRACT",
+        "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+      },
+      "affected_entity": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "impact_type": [
+        "TRANSITIVE",
+        "CONTRACT",
+        "CHANGE"
+      ],
+      "hop_depth": 2,
+      "path": {
+        "nodes": [
+          {
+            "kind": "CONTRACT",
+            "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+          },
+          {
+            "kind": "CONTRACT",
+            "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+          },
+          {
+            "kind": "CONTRACT",
+            "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+          }
+        ],
+        "steps": [
+          {
+            "source": {
+              "kind": "CONTRACT",
+              "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+            },
+            "target": {
+              "kind": "CONTRACT",
+              "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+            },
+            "relationship": "INVOCATES",
+            "edge_id": "31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714",
+            "direction": "inverted",
+            "evidence": [
+              {
+                "id": "0303030303030303030303030303030303030303030303030303030303030303",
+                "kind": "TRANSACTION"
+              }
+            ],
+            "confidence": {
+              "level": "VERIFIED",
+              "evidence": [
+                "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+              ],
+              "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+            }
+          },
+          {
+            "source": {
+              "kind": "CONTRACT",
+              "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+            },
+            "target": {
+              "kind": "CONTRACT",
+              "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+            },
+            "relationship": "INVOCATES",
+            "edge_id": "71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef",
+            "direction": "inverted",
+            "evidence": [
+              {
+                "id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "kind": "TRANSACTION"
+              }
+            ],
+            "confidence": {
+              "level": "VERIFIED",
+              "evidence": [
+                "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+              ],
+              "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+            }
+          }
+        ],
+        "hop_depth": 2,
+        "direction": "DEPENDENTS",
+        "termination": "NO_PROPAGATING_EDGE",
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303",
+            "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+          ],
+          "rationale": "minimum ordinal across 2 step(s), as taxonomies/confidence-levels.yaml requires"
+        }
+      },
+      "relationship_types": [
+        "INVOCATES",
+        "INVOCATES"
+      ],
+      "direction": "DEPENDENTS",
+      "change_type": "MODIFIED",
+      "evidence": [
+        {
+          "id": "0303030303030303030303030303030303030303030303030303030303030303",
+          "kind": "TRANSACTION"
+        },
+        {
+          "id": "0101010101010101010101010101010101010101010101010101010101010101",
+          "kind": "TRANSACTION"
+        }
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303",
+          "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+        ],
+        "rationale": "minimum ordinal across 2 step(s), as taxonomies/confidence-levels.yaml requires"
+      },
+      "reason": "a change to CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 reaches CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG in 2 hops: CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 <- INVOCATES CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K, then CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K <- INVOCATES CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+      "verification_state": null,
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "truncated": false
+    },
+    {
+      "id": "f2aaa735d3861e2c399d71995b3b2519cf1aa8b3ed8590f19b7393ba3ccab5ea",
+      "changed_entity": {
+        "kind": "CONTRACT",
+        "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+      },
+      "affected_entity": {
+        "kind": "CONTRACT",
+        "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+      },
+      "impact_type": [
+        "DIRECT",
+        "CONTRACT",
+        "CHANGE"
+      ],
+      "hop_depth": 1,
+      "path": {
+        "nodes": [
+          {
+            "kind": "CONTRACT",
+            "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+          },
+          {
+            "kind": "CONTRACT",
+            "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+          }
+        ],
+        "steps": [
+          {
+            "source": {
+              "kind": "CONTRACT",
+              "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+            },
+            "target": {
+              "kind": "CONTRACT",
+              "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+            },
+            "relationship": "INVOCATES",
+            "edge_id": "31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714",
+            "direction": "inverted",
+            "evidence": [
+              {
+                "id": "0303030303030303030303030303030303030303030303030303030303030303",
+                "kind": "TRANSACTION"
+              }
+            ],
+            "confidence": {
+              "level": "VERIFIED",
+              "evidence": [
+                "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+              ],
+              "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+            }
+          }
+        ],
+        "hop_depth": 1,
+        "direction": "DEPENDENTS",
+        "termination": "TARGET_REACHED",
+        "confidence": {
+          "level": "VERIFIED",
+          "evidence": [
+            "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+          ],
+          "rationale": "minimum ordinal across 1 step(s), as taxonomies/confidence-levels.yaml requires"
+        }
+      },
+      "relationship_types": [
+        "INVOCATES"
+      ],
+      "direction": "DEPENDENTS",
+      "change_type": "MODIFIED",
+      "evidence": [
+        {
+          "id": "0303030303030303030303030303030303030303030303030303030303030303",
+          "kind": "TRANSACTION"
+        }
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+        ],
+        "rationale": "minimum ordinal across 1 step(s), as taxonomies/confidence-levels.yaml requires"
+      },
+      "reason": "a change to CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 reaches CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K in 1 hop: CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3 <- INVOCATES CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+      "verification_state": null,
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "truncated": false
+    }
+  ],
+  "attestations": [
+    {
+      "id": "attestation-1",
+      "issuer": "Amasario Test Issuer",
+      "subject": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "claim": "the deployed module was built from the recorded revision",
+      "signature": "PRESENT_VERIFIED",
+      "verificationMethod": "ed25519 over the claim digest",
+      "evidence": [
+        "e-build-1"
+      ]
+    }
+  ],
+  "engineVersion": "1.0.0",
+  "contentDigest": {
+    "algorithm": "sha256",
+    "value": "77ebce72c809873d1437fd20f8a15fe6437932263ea58e95ce9fa5fd73bdd388"
+  },
+  "volatileFields": [
+    "/capturedAt",
+    "/contentDigest"
+  ],
+  "truncated": false
+}

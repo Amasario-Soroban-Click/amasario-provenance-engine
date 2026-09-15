@@ -1,0 +1,47 @@
+{
+  "apiVersion": "amasario.dev/v1",
+  "specVersion": "1.0.0",
+  "target": {
+    "kind": "CONTRACT",
+    "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+  },
+  "boundary": {
+    "network": {
+      "id": "testnet",
+      "type": "TESTNET",
+      "passphrase": "Test SDF Network ; September 2015"
+    },
+    "ledger": 1044,
+    "observedAt": "2026-01-01T00:00:00Z"
+  },
+  "sections": {
+    "observedFacts": [
+      {
+        "statement": "the dependency graph contains a cycle",
+        "entity": {
+          "kind": "CONTRACT",
+          "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+        },
+        "evidence": [
+          "e-transaction-1"
+        ]
+      }
+    ],
+    "inferredRelationships": [],
+    "verification": [],
+    "confidence": [],
+    "unknown": [
+      {
+        "question": "where the cycle begins, which a cyclic graph does not determine",
+        "reason": "NO_EVIDENCE_TYPE_CAN_ANSWER",
+        "detail": "the two contracts invoke each other, so neither is upstream of the other"
+      }
+    ],
+    "errors": []
+  },
+  "disclaimers": [
+    "Amasario is dependency, provenance and impact infrastructure. It is not a security scanner, and nothing in this report is a security assessment. No statement here means that a contract is secure, safe, malicious or vulnerable.",
+    "'VERIFIED' states that the evidence is consistent with the claim it is attached to. It states nothing about the trustworthiness of the entity the claim concerns. A fully verified provenance chain can describe a deliberate backdoor."
+  ],
+  "generatedAt": "2026-01-01T00:00:00Z"
+}

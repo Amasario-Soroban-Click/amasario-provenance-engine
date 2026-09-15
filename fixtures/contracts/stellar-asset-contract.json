@@ -1,0 +1,8 @@
+{
+  "contractId": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+  "networkId": "testnet",
+  "passphrase": "Test SDF Network ; September 2015",
+  "executableKind": "STELLAR_ASSET",
+  "resolvedAtLedger": 1044,
+  "identityVersion": "amasario/contract-identity/v1"
+}

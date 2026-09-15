@@ -1,0 +1,24 @@
+{
+  "edges": [],
+  "unresolved": [
+    {
+      "source": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "reason": "NOT_PERMITTED",
+      "detail": "INVOCATES CONTRACT:CDS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6KCXD is not permitted: dependency could not be established: a RUNTIME dependency of CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG on CONTRACT:CDS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6KCXD rests on a transaction recorded as unknown; runtime use must be established from a transaction recorded as successful, and an unknown outcome is not a successful one; observed: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called mint on CDS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6KCXD, in ledger 1044; basis OBSERVED_INVOCATION"
+    }
+  ],
+  "maxDepth": 1,
+  "truncated": false,
+  "boundary": {
+    "network": {
+      "id": "testnet",
+      "type": "TESTNET",
+      "passphrase": "Test SDF Network ; September 2015"
+    },
+    "ledger": 1044,
+    "observedAt": "2026-01-01T00:00:00Z"
+  }
+}

@@ -1,0 +1,96 @@
+[package]
+name = "amasario-integration-tests"
+description = "Integration suites and the fixture corpus for the Amasario provenance engine."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+# The suites live in the nine directories beside this manifest rather than in a
+# `tests/` directory, because the repository structure states where each one
+# belongs and a reader looking for the graph suite should find it under `graphs/`.
+# Each target is declared explicitly so that a suite that stopped being built
+# would be visible as a missing entry rather than as an empty glob.
+[[test]]
+name = "network"
+path = "network/network.rs"
+harness = true
+
+[[test]]
+name = "contracts"
+path = "contracts/contracts.rs"
+harness = true
+
+[[test]]
+name = "provenance"
+path = "provenance/provenance.rs"
+harness = true
+
+[[test]]
+name = "dependencies"
+path = "dependencies/dependencies.rs"
+harness = true
+
+[[test]]
+name = "graphs"
+path = "graphs/graphs.rs"
+harness = true
+
+[[test]]
+name = "impact"
+path = "impact/impact.rs"
+harness = true
+
+[[test]]
+name = "snapshots"
+path = "snapshots/snapshots.rs"
+harness = true
+
+[[test]]
+name = "verification"
+path = "verification/verification.rs"
+harness = true
+
+[[test]]
+name = "reports"
+path = "reports/reports.rs"
+harness = true
+
+# Writes the whole corpus under `fixtures/`. A maintainer runs it after changing a
+# builder; the suites assert that what is committed is what the builders produce, so
+# a fixture cannot drift away from the model that is supposed to generate it.
+[[bin]]
+name = "generate-fixtures"
+path = "src/bin/generate-fixtures.rs"
+
+[dependencies]
+amasario-contract = { workspace = true }
+amasario-core = { workspace = true }
+amasario-dependency = { workspace = true }
+amasario-evidence = { workspace = true }
+amasario-graph = { workspace = true }
+amasario-impact = { workspace = true }
+amasario-network = { workspace = true }
+amasario-provenance = { workspace = true }
+amasario-report = { workspace = true }
+amasario-snapshot = { workspace = true }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+stellar-strkey = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+amasario-export = { workspace = true }
+tokio = { workspace = true }
+tempfile = { workspace = true }
+wiremock = { workspace = true }

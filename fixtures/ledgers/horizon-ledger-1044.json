@@ -1,0 +1,11 @@
+{
+  "id": "0000000000000000044",
+  "sequence": 1044,
+  "hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "transaction_count": 2,
+  "successful_transaction_count": 1,
+  "failed_transaction_count": 1,
+  "closed_at": "2026-01-01T00:00:10Z",
+  "protocol_version": 22,
+  "paging_token": "1044"
+}

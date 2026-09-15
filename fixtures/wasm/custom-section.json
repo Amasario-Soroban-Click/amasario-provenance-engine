@@ -1,0 +1,10 @@
+{
+  "name": "custom-section",
+  "note": "a valid module whose only section is a custom one, which a decoder must skip",
+  "hex": "0061736d01000000001510616d61736172696f2d6669787475726574657374",
+  "byteSize": 31,
+  "digest": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2",
+  "digestAlgorithm": "sha256",
+  "magicPresent": true,
+  "isAModule": true
+}

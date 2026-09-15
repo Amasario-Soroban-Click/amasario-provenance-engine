@@ -1,0 +1,90 @@
+{
+  "apiVersion": "amasario.dev/v1",
+  "specVersion": "1.0.0",
+  "id": "amasario.transitive",
+  "nodes": [
+    {
+      "id": "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+      "kind": "CONTRACT"
+    },
+    {
+      "id": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+      "kind": "CONTRACT"
+    },
+    {
+      "id": "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3",
+      "kind": "CONTRACT"
+    }
+  ],
+  "edges": [
+    {
+      "id": "71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef",
+      "source": "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+      "target": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+      "relationship": "INVOCATES",
+      "evidence": [
+        "0101010101010101010101010101010101010101010101010101010101010101"
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+        ],
+        "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+      },
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "observed": true
+    },
+    {
+      "id": "31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714",
+      "source": "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K",
+      "target": "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3",
+      "relationship": "INVOCATES",
+      "evidence": [
+        "0303030303030303030303030303030303030303030303030303030303030303"
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"
+        ],
+        "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+      },
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "observed": true
+    }
+  ],
+  "boundary": {
+    "network": {
+      "id": "testnet",
+      "type": "TESTNET",
+      "passphrase": "Test SDF Network ; September 2015"
+    },
+    "ledger": 1044,
+    "observedAt": "2026-01-01T00:00:00Z"
+  },
+  "metadata": {
+    "directed": true,
+    "cyclic": false,
+    "nodeCount": 3,
+    "edgeCount": 2,
+    "truncated": false,
+    "disconnectedNodes": []
+  }
+}

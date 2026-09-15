@@ -1,0 +1,120 @@
+{
+  "contract": {
+    "kind": "CONTRACT",
+    "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+  },
+  "links": [
+    {
+      "kind": "SOURCE_RESOLVED",
+      "subject": {
+        "kind": "SOURCE",
+        "id": "amasario-provenance-engine"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "HIGH_CONFIDENCE",
+        "evidence": [
+          "e-source-1"
+        ]
+      },
+      "verification": "VERIFIED"
+    },
+    {
+      "kind": "SOURCE_TO_BUILD",
+      "subject": {
+        "kind": "BUILD",
+        "id": "amasario-cli-1.0.0"
+      },
+      "object": {
+        "kind": "SOURCE",
+        "id": "amasario-provenance-engine"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "HIGH_CONFIDENCE",
+        "evidence": [
+          "e-build-1"
+        ]
+      },
+      "verification": "VERIFIED"
+    },
+    {
+      "kind": "BUILD_TO_ARTIFACT",
+      "subject": {
+        "kind": "ARTIFACT",
+        "id": "amasario_cli.wasm"
+      },
+      "object": {
+        "kind": "BUILD",
+        "id": "amasario-cli-1.0.0"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "HIGH_CONFIDENCE",
+        "evidence": [
+          "e-build-1"
+        ]
+      },
+      "verification": "VERIFIED"
+    },
+    {
+      "kind": "ARTIFACT_TO_WASM",
+      "subject": {
+        "kind": "WASM",
+        "id": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+      },
+      "object": {
+        "kind": "ARTIFACT",
+        "id": "amasario_cli.wasm"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "LOW_CONFIDENCE",
+        "evidence": [
+          "e-artifact-1",
+          "e-deployment-1"
+        ]
+      },
+      "verification": "CONFLICTING"
+    },
+    {
+      "kind": "WASM_TO_DEPLOYMENT",
+      "subject": {
+        "kind": "WASM",
+        "id": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+      },
+      "object": {
+        "kind": "DEPLOYMENT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG@1044"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "LOW_CONFIDENCE",
+        "evidence": [
+          "e-artifact-1",
+          "e-deployment-1"
+        ]
+      },
+      "verification": "CONFLICTING"
+    },
+    {
+      "kind": "DEPLOYMENT_TO_CONTRACT",
+      "subject": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "object": {
+        "kind": "DEPLOYMENT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG@1044"
+      },
+      "basis": "EMBEDDED_DIGEST",
+      "confidence": {
+        "level": "HIGH_CONFIDENCE",
+        "evidence": [
+          "e-deployment-1"
+        ]
+      },
+      "verification": "VERIFIED"
+    }
+  ]
+}

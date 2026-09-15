@@ -1,0 +1,14 @@
+{
+  "contractId": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG",
+  "networkId": "testnet",
+  "passphrase": "Test SDF Network ; September 2015",
+  "executableKind": "WASM",
+  "wasmHash": {
+    "algorithm": "sha256",
+    "value": "0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2"
+  },
+  "resolvedAtLedger": 1044,
+  "firstObservedLedger": 900,
+  "lastObservedLedger": 900,
+  "identityVersion": "amasario/contract-identity/v1"
+}

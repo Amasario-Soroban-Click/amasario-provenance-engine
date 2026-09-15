@@ -1,0 +1,218 @@
+{
+  "edges": [
+    {
+      "id": "71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef",
+      "source": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "target": {
+        "kind": "CONTRACT",
+        "id": "CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K"
+      },
+      "relationship": "INVOCATES",
+      "dependencyClass": "CONTRACT",
+      "basis": "OBSERVED_INVOCATION",
+      "evidence": [
+        "0101010101010101010101010101010101010101010101010101010101010101"
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"
+        ],
+        "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+      },
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "firstObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "lastObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "verificationStatus": "VERIFIED",
+      "observed": true,
+      "metadata": {
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called transfer on CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K, in ledger 1044, established by the OBSERVED_INVOCATION basis, observed on testnet"
+      }
+    },
+    {
+      "id": "3bb41a3decd1d44d92edd28c25c2a4fa1873f99cd82ba0b0298992e7deb7e2d9",
+      "source": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "target": {
+        "kind": "CONTRACT",
+        "id": "CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3"
+      },
+      "relationship": "INVOCATES",
+      "dependencyClass": "CONTRACT",
+      "basis": "OBSERVED_INVOCATION",
+      "evidence": [
+        "0202020202020202020202020202020202020202020202020202020202020202"
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0202020202020202020202020202020202020202020202020202020202020202"
+        ],
+        "rationale": "the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"
+      },
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "firstObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "lastObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "verificationStatus": "VERIFIED",
+      "observed": true,
+      "metadata": {
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called balance on CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3, in ledger 1044, established by the OBSERVED_INVOCATION basis, observed on testnet"
+      }
+    },
+    {
+      "id": "f93a3802235c3945e38d30d48f30c1701ce318e5bd3404bc13aaa7a80d0f0445",
+      "source": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "target": {
+        "kind": "CONTRACT",
+        "id": "CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+      },
+      "relationship": "INVOCATES",
+      "dependencyClass": "CONTRACT",
+      "basis": "OBSERVED_EVENT",
+      "evidence": [
+        "0909090909090909090909090909090909090909090909090909090909090909",
+        "event-09-1"
+      ],
+      "confidence": {
+        "level": "VERIFIED",
+        "evidence": [
+          "TRANSACTION:0909090909090909090909090909090909090909090909090909090909090909",
+          "EVENT:event-09-1"
+        ],
+        "rationale": "the OBSERVED_EVENT basis sets a ceiling of VERIFIED"
+      },
+      "network": {
+        "id": "testnet",
+        "type": "TESTNET",
+        "passphrase": "Test SDF Network ; September 2015"
+      },
+      "boundary": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "firstObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "lastObserved": {
+        "network": {
+          "id": "testnet",
+          "type": "TESTNET",
+          "passphrase": "Test SDF Network ; September 2015"
+        },
+        "ledger": 1044,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "verificationStatus": "VERIFIED",
+      "observed": true,
+      "metadata": {
+        "depth": 0,
+        "reason": "CONTRACT and RUNTIME: CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG called settle on CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5, in ledger 1044, established by the OBSERVED_EVENT basis, observed on testnet"
+      }
+    }
+  ],
+  "direct": [
+    "71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef",
+    "3bb41a3decd1d44d92edd28c25c2a4fa1873f99cd82ba0b0298992e7deb7e2d9",
+    "f93a3802235c3945e38d30d48f30c1701ce318e5bd3404bc13aaa7a80d0f0445"
+  ],
+  "unresolved": [
+    {
+      "source": {
+        "kind": "CONTRACT",
+        "id": "CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG"
+      },
+      "reason": "NOT_PERMITTED",
+      "detail": "INVOCATES CONTRACT:CDS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6LZPF4XS6KCXD is not permitted: the endpoint did not report whether the invocation succeeded, and an unknown outcome is not a successful one; observed: alpha called mint on the contract at 0xe5; basis OBSERVED_INVOCATION"
+    }
+  ],
+  "maxDepth": 3,
+  "truncated": false,
+  "boundary": {
+    "network": {
+      "id": "testnet",
+      "type": "TESTNET",
+      "passphrase": "Test SDF Network ; September 2015"
+    },
+    "ledger": 1044,
+    "observedAt": "2026-01-01T00:00:00Z"
+  }
+}
