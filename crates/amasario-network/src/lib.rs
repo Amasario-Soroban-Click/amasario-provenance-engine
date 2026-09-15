@@ -91,7 +91,10 @@ pub use contracts::{
     fetch_contract_code, fetch_contract_entries, fetch_contract_instance, wasm_hash_of,
 };
 pub use errors::{classify, classify_code, classify_status, status_is_absent, status_is_transient};
-pub use events::{EventQuery, EventScan, scan_events};
+pub use events::{
+    DEFAULT_LOOKBACK_LEDGERS, DEFAULT_MAX_EVENT_PAGES, EVENTS_START_LEDGER_MARGIN, EventQuery,
+    EventScan, EventWindow, scan_events,
+};
 pub use horizon::{HorizonSession, HorizonTransaction, MAX_COLLECTION_LIMIT};
 pub use operations::{
     OperationRecord, operations_for_account, operations_for_ledger, operations_for_transaction,
