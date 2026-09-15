@@ -132,7 +132,7 @@ pub use build::{
     BuildProvenance, EnvironmentVariable, REDACTED, Reproducibility, ReproducibilityStatus,
     Toolchain, is_secret_name, sanitise_environment,
 };
-pub use deployment::{DeploymentKind, DeploymentProvenance};
+pub use deployment::{DeploymentKind, DeploymentProvenance, DeploymentStatus};
 pub use errors::{ProvenanceFailure, describe as describe_failure, first_failure};
 pub use matching::{
     ChainLink, ChainLinkKind, MatchOutcome, ProvenanceChain, match_digests, match_rebuilt_module,
@@ -157,6 +157,8 @@ mod tests {
         assert_eq!(ArtifactType::Wasm.as_str(), "WASM");
         assert_eq!(ReproducibilityStatus::Reproduced.as_str(), "REPRODUCED");
         assert_eq!(DeploymentKind::Deploy.as_str(), "DEPLOY");
+        assert_eq!(DeploymentStatus::Confirmed.as_str(), "CONFIRMED");
+        assert!(!DeploymentStatus::Failed.eligible_for_impact());
         assert_eq!(
             SignatureState::PresentUnverified.as_str(),
             "PRESENT_UNVERIFIED"

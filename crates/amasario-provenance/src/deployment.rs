@@ -318,6 +318,98 @@ impl DeploymentProvenance {
     }
 }
 
+/// How far a deployment record has been established.
+///
+/// # Why eligibility is a method here rather than a filter in the impact layer
+///
+/// The taxonomy's five terms are about a deployment record, so the rule that reads
+/// them belongs with the record. Impact analysis needs exactly one question answered
+/// (`eligible_for_impact`) and asking it of the record keeps the answer in one place:
+/// an impact finding that named a deployment which never took effect would report the
+/// consequence of an event that did not happen.
+///
+/// The taxonomy's terms are `OBSERVED`, `CONFIRMED`, `UNCONFIRMED`, `FAILED` and
+/// `UNKNOWN`. `OBSERVED` and `CONFIRMED` are both eligible: a deployment seen in a
+/// ledger has taken effect by definition, and requiring `CONFIRMED` would exclude
+/// records the engine can establish from a successful transaction but has not
+/// cross-checked against a second source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DeploymentStatus {
+    /// The deployment was seen in a ledger that was observed.
+    Observed,
+    /// The deployment was cross-checked and its transaction confirmed successful.
+    Confirmed,
+    /// The deployment was recorded but not established as having taken effect.
+    Unconfirmed,
+    /// The deployment's transaction failed, so the deployment never took effect.
+    Failed,
+    /// Whether the deployment took effect was not established.
+    Unknown,
+}
+
+impl DeploymentStatus {
+    /// The stable wire name, matching the taxonomy.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Observed => "OBSERVED",
+            Self::Confirmed => "CONFIRMED",
+            Self::Unconfirmed => "UNCONFIRMED",
+            Self::Failed => "FAILED",
+            Self::Unknown => "UNKNOWN",
+        }
+    }
+
+    /// Whether a change could affect a deployment with this status.
+    ///
+    /// The rule `impact/deployment-impact` states the exclusion directly: a finding
+    /// must not name a deployment whose status is `UNCONFIRMED`, `FAILED` or
+    /// `UNKNOWN`. `FAILED` is the clearest case - the deployment never happened - but
+    /// the other two are excluded for the same reason: an impact claim asserts that a
+    /// change may reach a thing that exists, and each of these three says that has not
+    /// been established.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use amasario_provenance::DeploymentStatus;
+    ///
+    /// assert!(DeploymentStatus::Confirmed.eligible_for_impact());
+    /// assert!(DeploymentStatus::Observed.eligible_for_impact());
+    /// assert!(!DeploymentStatus::Failed.eligible_for_impact());
+    /// assert!(!DeploymentStatus::Unknown.eligible_for_impact());
+    /// ```
+    #[must_use]
+    pub const fn eligible_for_impact(self) -> bool {
+        matches!(self, Self::Observed | Self::Confirmed)
+    }
+}
+
+impl fmt::Display for DeploymentStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for DeploymentStatus {
+    type Err = EngineError;
+
+    fn from_str(value: &str) -> Result<Self> {
+        match value {
+            "OBSERVED" => Ok(Self::Observed),
+            "CONFIRMED" => Ok(Self::Confirmed),
+            "UNCONFIRMED" => Ok(Self::Unconfirmed),
+            "FAILED" => Ok(Self::Failed),
+            "UNKNOWN" => Ok(Self::Unknown),
+            other => Err(EngineError::Validation {
+                path: "/deployment/status".to_owned(),
+                detail: format!("unrecognised deployment status {other:?}"),
+            }),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
