@@ -62,10 +62,18 @@ amasario-impact.workspace = true
 amasario-report.workspace = true
 amasario-snapshot.workspace = true
 
+[dev-dependencies]
 # The corpus builders are the benchmark inputs. Sharing them rather than restating
 # the setup in each bench means a benchmark measures the engine over the same
 # documents the integration suites assert, so a fixture change moves both.
-amasario-integration-tests = { path = "integration-tests" }
+#
+# The version is stated as well as the path, because a path-only requirement is a
+# wildcard: `deny.toml` denies wildcards, and the denial is right here for the reason it
+# is right anywhere - a requirement with no version accepts whatever is at that path, so
+# a rename or a rewritten dependency would be picked up without anything noticing.
+# `integration-tests` is `publish = false`, so this never has to resolve against a
+# registry; the constraint exists so the requirement says what it means.
+amasario-integration-tests = { path = "integration-tests", version = "1.0.0" }
 
 criterion.workspace = true
 
