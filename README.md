@@ -222,6 +222,25 @@ reproduce each vector's canonical serialisation and digest byte for byte.
 | [`docs/ci-integration.md`](docs/ci-integration.md) | Using the engine as a build gate |
 | [`docs/security.md`](docs/security.md) | The security boundaries, stated as what the tool does not claim |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | Exit codes, and each failure mode with its cause and remedy |
+| [`examples/README.md`](examples/README.md) | Nine worked examples, and which of them run without a network |
+
+## Examples
+
+Nine worked examples live under [`examples/`](examples/), one per question the engine is
+built to answer. They are executable documentation rather than prose: each directory has
+a `command` script, and `scripts/check-examples.sh` runs the offline ones and compares
+their output against the committed bytes.
+
+The distinction the tree draws is honest about what can be verified where. An **offline**
+example reads the generated corpus under [`fixtures/`](fixtures/) and reproduces exactly,
+so CI checks it. An **endpoint** example analyses something only a chain can describe, so
+it cannot run in CI and does not pretend to - instead the check points it at an address
+that refuses connections and requires exit `69` (`NETWORK`), which proves every flag in
+the documented command line parses without needing a network to analyse.
+
+```console
+scripts/check-examples.sh
+```
 
 ## Licence
 

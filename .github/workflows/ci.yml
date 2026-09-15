@@ -59,6 +59,14 @@ jobs:
       - name: Tests
         run: cargo test --all-features
 
+      # The examples under `examples/` are executable documentation, so they are checked
+      # rather than trusted. The offline ones are re-run and compared against their
+      # committed output; the endpoint ones are pointed at an address that refuses
+      # connections, where they must exit 69 rather than 2 - which is what proves every
+      # flag in the documented command line still parses.
+      - name: Examples
+        run: scripts/check-examples.sh
+
       # The conformance checks are ignored by default because they need the
       # specification checkout, which this job provides. Running them here is what
       # makes the comparison enforced rather than merely available.

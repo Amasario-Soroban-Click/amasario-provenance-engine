@@ -43,14 +43,22 @@ That mirrors `.github/workflows/ci.yml` step for step. If you want the pieces:
 cargo fmt --all -- --check
 cargo clippy --workspace --all-features --all-targets -- -D warnings
 cargo test --workspace --all-features
+scripts/check-examples.sh
 AMASARIO_SPEC_DIR=.amasario-spec cargo test --workspace --all-features -- --include-ignored
 AMASARIO_SPEC_DIR=.amasario-spec scripts/validate-profile.sh
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
 ```
 
 CI fails on a formatting difference, a clippy warning, a failing test, a broken
-documentation link and an invalid profile. None of those is negotiable, and none of them
-is a matter of taste: `cargo fmt` is the formatter, so there is no style debate to have.
+documentation link, a broken example and an invalid profile. None of those is negotiable,
+and none of them is a matter of taste: `cargo fmt` is the formatter, so there is no style
+debate to have.
+
+`scripts/check-examples.sh` is worth knowing about before you change output. The examples
+under [`examples/`](examples/) are executable documentation, and the offline ones carry
+their exact stdout as `expected.out`. A change to a renderer therefore shows up as a
+diff there, which is deliberate: it is a change a reader of the documentation needs to
+know about, and regenerating `expected.out` is how you say you meant it.
 
 ## What a good change looks like
 

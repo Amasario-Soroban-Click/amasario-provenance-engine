@@ -54,6 +54,12 @@ step "documentation"
 # annoying them.
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
 
+step "examples"
+# The examples are executable documentation: the offline ones are re-run and compared
+# against their committed output, and the endpoint ones are pointed at an address that
+# refuses connections and must report that as a network failure rather than a usage error.
+"${script_dir}/check-examples.sh"
+
 step "specification conformance"
 if [ -n "${spec_dir}" ] && [ -d "${spec_dir}" ]; then
   echo "checking against ${spec_dir}"
