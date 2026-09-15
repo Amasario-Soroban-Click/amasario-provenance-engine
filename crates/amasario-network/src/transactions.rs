@@ -22,6 +22,7 @@
 use std::collections::BTreeSet;
 
 use amasario_core::{Cancellation, EngineError, LedgerSequence, Result, TransactionHash};
+use stellar_rpc_client::GetTransactionResponse;
 use stellar_xdr::{
     ContractEvent, DiagnosticEvent, Hash, HostFunction, LedgerEntryData, Operation, OperationBody,
     ScAddress, TransactionEnvelope, TransactionEvent, TransactionMeta, TransactionResult,
@@ -62,6 +63,52 @@ pub struct TransactionObservation {
     pub diagnostic_events: Vec<DiagnosticEvent>,
 }
 
+impl TransactionObservation {
+    /// Maps the endpoint's own transaction response into an observation.
+    ///
+    /// # Why this is a constructor rather than the body of [`fetch_transaction`]
+    ///
+    /// The mapping from a response to an observation is the step that decides what the
+    /// rest of the engine is allowed to know about a transaction, and it is also the
+    /// step where two live defects were found: the diagnostic events were read from the
+    /// endpoint's accessor rather than from the transaction's metadata, and the
+    /// transaction's outcome was not carried onto the invocations it produced. Neither
+    /// is visible from a mock that returns an observation directly, so the mapping has
+    /// to be reachable with a response in hand.
+    ///
+    /// Being a separate constructor means a captured response - the exact bytes an
+    /// endpoint returned - can be pushed through the same code a live run uses, which is
+    /// what the capture corpus tests do. `hash` is the hash the caller asked for, used
+    /// only when the endpoint omitted its own echo of it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError::Validation`] when the reported ledger number is not a valid
+    /// ledger sequence.
+    pub fn from_response(response: GetTransactionResponse, hash: &TransactionHash) -> Result<Self> {
+        let ledger = response.ledger.map(LedgerSequence::new).transpose()?;
+        let successful = response.status.eq_ignore_ascii_case("SUCCESS");
+        let diagnostic_events = diagnostic_events_of(
+            response.result_meta.as_ref(),
+            &response.events.diagnostic_events,
+        );
+
+        Ok(Self {
+            hash: response.tx_hash.unwrap_or_else(|| hash.as_str().to_owned()),
+            ledger,
+            status: response.status,
+            successful,
+            application_order: response.application_order,
+            envelope: response.envelope,
+            result: response.result,
+            result_meta: response.result_meta,
+            contract_events: response.events.contract_events,
+            transaction_events: response.events.transaction_events,
+            diagnostic_events,
+        })
+    }
+}
+
 /// Reads a transaction by hash.
 ///
 /// Returns `Ok(None)` when the network reports the transaction as absent. That is a
@@ -81,26 +128,7 @@ pub async fn fetch_transaction(
         return Ok(None);
     };
 
-    let ledger = response.ledger.map(LedgerSequence::new).transpose()?;
-    let successful = response.status.eq_ignore_ascii_case("SUCCESS");
-    let diagnostic_events = diagnostic_events_of(
-        response.result_meta.as_ref(),
-        &response.events.diagnostic_events,
-    );
-
-    Ok(Some(TransactionObservation {
-        hash: response.tx_hash.unwrap_or_else(|| hash.as_str().to_owned()),
-        ledger,
-        status: response.status,
-        successful,
-        application_order: response.application_order,
-        envelope: response.envelope,
-        result: response.result,
-        result_meta: response.result_meta,
-        contract_events: response.events.contract_events,
-        transaction_events: response.events.transaction_events,
-        diagnostic_events,
-    }))
+    TransactionObservation::from_response(response, hash).map(Some)
 }
 
 /// The diagnostic events a transaction carries.
