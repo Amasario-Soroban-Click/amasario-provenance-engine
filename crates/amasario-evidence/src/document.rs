@@ -75,7 +75,11 @@ pub struct EvidenceDocument {
     ///
     /// The schema requires at least one entry when the field is present, so an empty
     /// list is omitted rather than published as `[]`.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    ///
+    /// `default` accompanies the omission so that a document the engine wrote is a
+    /// document the engine can read; a field that is written only when non-empty must be
+    /// read as absent when it is missing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supports_relationships: Vec<String>,
     /// When this record was observed, as an RFC 3339 timestamp.
     pub observed_at: String,

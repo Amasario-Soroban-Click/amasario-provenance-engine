@@ -355,7 +355,10 @@ pub struct VerificationEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     /// The evidence the outcome rests on.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    ///
+    /// An empty list is omitted and a missing list reads as empty, so that the document
+    /// round-trips: a producer that writes an omission must accept the omission back.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<String>,
 }
 
