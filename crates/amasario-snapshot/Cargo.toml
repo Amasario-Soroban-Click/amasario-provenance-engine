@@ -1,0 +1,29 @@
+[package]
+name = "amasario-snapshot"
+description = "Snapshot capture, canonical normalisation, storage and deterministic comparison: the persisted record of one analysis and the diff between two of them."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-contract = { workspace = true }
+amasario-core = { workspace = true }
+amasario-dependency = { workspace = true }
+amasario-evidence = { workspace = true }
+amasario-graph = { workspace = true }
+amasario-impact = { workspace = true }
+amasario-provenance = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

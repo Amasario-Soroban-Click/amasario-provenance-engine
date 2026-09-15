@@ -9,6 +9,7 @@ members = [
   "crates/amasario-graph",
   "crates/amasario-impact",
   "crates/amasario-provenance",
+  "crates/amasario-snapshot",
 ]
 
 # Lint policy for every member. `[lints] workspace = true` in a crate manifest is

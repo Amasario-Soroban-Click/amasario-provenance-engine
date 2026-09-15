@@ -131,6 +131,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "amasario-snapshot"
+version = "1.0.0"
+dependencies = [
+ "amasario-contract",
+ "amasario-core",
+ "amasario-dependency",
+ "amasario-evidence",
+ "amasario-graph",
+ "amasario-impact",
+ "amasario-provenance",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
