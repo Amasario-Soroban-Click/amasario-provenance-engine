@@ -1,3 +1,74 @@
+# The root is both the workspace and a package, because the benchmarks are not the
+# property of any single crate: each one measures a different layer against the same
+# corpus, and the structure states that they live in `benches/` at the root. A package
+# whose only targets are benchmarks needs neither a library nor a binary, so this
+# manifest declares the six targets explicitly and turns autodiscovery off - a stray
+# `.rs` file under `benches/` would otherwise become a bench that nothing runs.
+[package]
+name = "amasario"
+description = "Benchmarks for the Amasario provenance, dependency and impact engine."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+# Not a crate anyone installs: it exists so that `cargo bench` has a home.
+publish = false
+autobenches = false
+
+[[bench]]
+name = "contract-inspection"
+path = "benches/contract-inspection.rs"
+harness = false
+
+[[bench]]
+name = "dependency-resolution"
+path = "benches/dependency-resolution.rs"
+harness = false
+
+[[bench]]
+name = "graph-traversal"
+path = "benches/graph-traversal.rs"
+harness = false
+
+[[bench]]
+name = "impact-analysis"
+path = "benches/impact-analysis.rs"
+harness = false
+
+[[bench]]
+name = "snapshot-comparison"
+path = "benches/snapshot-comparison.rs"
+harness = false
+
+[[bench]]
+name = "report-generation"
+path = "benches/report-generation.rs"
+harness = false
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-contract.workspace = true
+amasario-core.workspace = true
+amasario-dependency.workspace = true
+amasario-graph.workspace = true
+amasario-impact.workspace = true
+amasario-report.workspace = true
+amasario-snapshot.workspace = true
+
+# The corpus builders are the benchmark inputs. Sharing them rather than restating
+# the setup in each bench means a benchmark measures the engine over the same
+# documents the integration suites assert, so a fixture change moves both.
+amasario-integration-tests = { path = "integration-tests" }
+
+criterion.workspace = true
+
 [workspace]
 resolver = "3"
 members = [
