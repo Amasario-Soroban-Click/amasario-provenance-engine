@@ -4,6 +4,7 @@ members = [
   "crates/amasario-core",
   "crates/amasario-network",
   "crates/amasario-contract",
+  "crates/amasario-dependency",
   "crates/amasario-provenance",
 ]
 

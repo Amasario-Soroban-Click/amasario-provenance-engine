@@ -672,6 +672,19 @@ impl EntityRef {
     }
 }
 
+impl fmt::Display for EntityRef {
+    /// Renders the reference as `KIND:id`.
+    ///
+    /// One form rather than several, because this is what an identifier looks like
+    /// throughout the engine's output: an entity kind alone is ambiguous, and an
+    /// identifier alone does not say what namespace it lives in. Every layer that
+    /// names an entity in prose, an error or a report uses this, so the two halves
+    /// cannot drift apart in different places.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.kind.as_str(), self.id)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // strkey internals
 // ---------------------------------------------------------------------------

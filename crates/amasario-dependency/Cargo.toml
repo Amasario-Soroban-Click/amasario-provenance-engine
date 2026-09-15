@@ -1,0 +1,21 @@
+[package]
+name = "amasario-dependency"
+description = "Dependency discovery and classification for Soroban contracts: candidates from evidence, classification into the specification's dependency classes, and bounded transitive closure."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-contract = { workspace = true }
+amasario-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
