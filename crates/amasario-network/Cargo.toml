@@ -1,0 +1,54 @@
+[package]
+name = "amasario-network"
+description = "Stellar network adapters: RPC and Horizon transports, observation boundaries and error classification."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-core = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+futures = { workspace = true }
+url = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+# `stellar-rpc-client` and `stellar-xdr` are the Stellar organisation's own
+# client and XDR definitions, used here so that method names, request parameters
+# and response shapes are the ones the network actually implements rather than a
+# locally invented approximation.
+stellar-rpc-client = { workspace = true }
+stellar-xdr = { workspace = true }
+stellar-strkey = { workspace = true }
+
+# `jsonrpsee-core` is a direct dependency because it appears in the public API of
+# `stellar-rpc-client`: the client's `Error::JsonRpc` variant wraps
+# `jsonrpsee_core::ClientError`, so classifying a transport failure by its actual
+# cause requires naming that type. It is pinned to the version the client uses;
+# a second, differently-versioned copy would not match the variant, and a copy with
+# a different feature set would not expose `HttpError`, which is the type that
+# distinguishes a malformed response from a broken connection.
+jsonrpsee-core = { version = "0.26.0", features = ["http-helpers"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+# A local HTTP server for tests. The network tests must not depend on the public
+# testnet: a test that reaches the internet is not reproducible, fails in a
+# sandbox, and cannot exercise a malformed or rate-limited response on demand.
+wiremock = { workspace = true }
+serde_json = { workspace = true }

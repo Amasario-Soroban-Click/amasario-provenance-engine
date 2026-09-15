@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
   "crates/amasario-core",
+  "crates/amasario-network",
 ]
 
 # Lint policy for every member. `[lints] workspace = true` in a crate manifest is
@@ -29,7 +30,10 @@ redundant_clone = "warn"
 [workspace.package]
 version = "1.0.0"
 edition = "2024"
-rust-version = "1.88"
+# Not a preference. `stellar-rpc-client` declares 1.93.0, and the engine cannot
+# compile on anything older, so claiming a lower MSRV would be a false statement
+# that a contributor would only discover by hitting an error.
+rust-version = "1.93"
 license = "Apache-2.0"
 repository = "https://github.com/Amasario-Soroban-Click/amasario-provenance-engine"
 homepage = "https://github.com/Amasario-Soroban-Click/amasario-provenance-engine"
@@ -64,17 +68,36 @@ serde_norway = "0.9.42"
 
 # -- async runtime and HTTP ---------------------------------------------------
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "time", "signal"] }
-reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls-tls"] }
+# `default-features = false` drops the OpenSSL-backed `default-tls`, which keeps
+# the engine buildable on a machine without a system TLS stack. The feature is
+# named `rustls` rather than the older `rustls-tls`; Cargo rejects the old name
+# outright, so an out-of-date spelling is a resolution failure rather than a
+# silently different TLS backend.
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls"] }
 futures = "0.3.34"
 
 # -- Stellar ------------------------------------------------------------------
-# `stellar-rpc-client` is the Stellar organisation's own RPC client, so the
-# engine speaks the protocol the network actually implements rather than a
-# locally invented approximation. `stellar-xdr` and `stellar-strkey` come from
-# the same organisation and cover XDR decoding and strkey encoding, both of which
-# are protocol facts the engine must not reimplement.
+# `stellar-rpc-client` is the Stellar organisation's own RPC client, so the engine
+# speaks the protocol the network actually implements rather than a locally
+# invented approximation: method names, request parameters and response shapes are
+# all owned by that crate. `stellar-xdr` and `stellar-strkey` come from the same
+# organisation and cover XDR decoding and strkey encoding, both of which are
+# protocol facts the engine must not reimplement.
+#
+# The three versions are aligned deliberately and must move together.
+# `stellar-rpc-client` exposes `stellar_xdr` types in its public API - its
+# `get_ledger_entries` returns XDR, and its own `Error` wraps `xdr::Error` - so a
+# second, differently-versioned `stellar-xdr` in the graph would produce two
+# distinct and mutually unconvertible sets of the same nominal types. Cargo would
+# happily build both, and the mismatch would surface as a confusing type error
+# rather than as a resolution failure. `stellar-xdr` 27 is the version this client
+# requires; the engine therefore uses 27 rather than the newer 28.
 stellar-rpc-client = "27.0.0"
-stellar-xdr = { version = "28.0.0", features = ["base64", "curr"] }
+# `curr` is not a feature of recent `stellar-xdr` releases: the crate now exposes
+# the current protocol revision at its root. `base64` supplies the `from_xdr_base64`
+# decoding the RPC responses need and `serde` supplies the derived impls used by
+# the snapshot format.
+stellar-xdr = { version = "27.0.0", features = ["base64", "serde"] }
 stellar-strkey = "0.0.18"
 
 # -- errors, logging, CLI -----------------------------------------------------
