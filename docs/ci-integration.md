@@ -146,7 +146,11 @@ scripts/run-ci.sh
 ```
 
 It runs what the workflows run, in the same order, so a failure is reproducible before it
-is pushed.
+is pushed. That includes the dependency-policy step from `security.yml` - `cargo deny
+check` against `deny.toml` and `cargo audit --deny warnings` against the lockfile. Both
+are skipped with a printed reason when the tool is not installed, rather than the run
+reporting a green gate it did not actually reach. The script installs neither: they are
+release binaries, and fetching one as part of a check would be its own supply-chain step.
 
 ## Benchmarks
 

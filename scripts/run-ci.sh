@@ -2,12 +2,16 @@
 #
 # Run the same checks CI runs, locally.
 #
-# This mirrors .github/workflows/ci.yml rather than approximating it: the value of a
+# This mirrors the workflows CI runs rather than approximating them: the value of a
 # local CI script is that it catches what the remote job would catch, and a script
-# that runs a subset is one a contributor learns to distrust. Every step CI performs
-# is performed here, and the specification-conformance step is skipped with a visible
-# reason when no checkout of the specification is available rather than passing
-# silently.
+# that runs a subset is one a contributor learns to distrust. Every step ci.yml and
+# security.yml perform is performed here, and a step whose tooling or inputs are absent
+# is skipped with a visible reason rather than passing silently.
+#
+# The dependency-policy step is included for that reason. It was a step that only
+# existed remotely, and the configuration it checks had drifted from the checker that
+# reads it - which is exactly the class of failure this script is meant to catch before
+# a push. None of that is discoverable by running the tests.
 #
 # Usage:
 #   scripts/run-ci.sh
@@ -97,6 +101,28 @@ if [ -n "${spec_dir}" ] && [ -d "${spec_dir}" ]; then
   AMASARIO_SPEC_DIR="${spec_dir}" "${script_dir}/validate-profile.sh"
 else
   echo "SKIPPED: profile validation reads the specification's taxonomies."
+fi
+
+step "dependency policy (advisories, licences, sources)"
+# The same checks security.yml runs. Both tools are skipped with a reason when they are
+# not installed, because a contributor without them should not be told the gate passed.
+# Neither tool is installed by this script: they are release binaries, and fetching one
+# during a check is a supply-chain step of its own.
+ran_security_step=0
+if command -v cargo-deny >/dev/null 2>&1; then
+  cargo deny check
+  ran_security_step=1
+else
+  echo "SKIPPED: cargo-deny is not installed. Install it to check deny.toml."
+fi
+if command -v cargo-audit >/dev/null 2>&1; then
+  cargo audit --deny warnings
+  ran_security_step=1
+else
+  echo "SKIPPED: cargo-audit is not installed. Install it to check the lockfile."
+fi
+if [ "${ran_security_step}" -eq 0 ]; then
+  echo "Neither dependency-policy tool ran; deny.toml and Cargo.lock were not checked."
 fi
 
 step "release validation"

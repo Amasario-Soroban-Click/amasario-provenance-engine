@@ -37,7 +37,9 @@ Run the whole pipeline before opening a pull request:
 scripts/run-ci.sh
 ```
 
-That mirrors `.github/workflows/ci.yml` step for step. If you want the pieces:
+That mirrors `.github/workflows/ci.yml` and `.github/workflows/security.yml` step for
+step, including the dependency-policy check, so that a `deny.toml` or `Cargo.lock`
+problem fails here rather than on the pull request. If you want the pieces:
 
 ```console
 cargo fmt --all -- --check
@@ -47,7 +49,14 @@ scripts/check-examples.sh
 AMASARIO_SPEC_DIR=.amasario-spec cargo test --workspace --all-features -- --include-ignored
 AMASARIO_SPEC_DIR=.amasario-spec scripts/validate-profile.sh
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
+cargo deny check
+cargo audit --deny warnings
 ```
+
+`cargo-deny` and `cargo-audit` are release binaries rather than cargo plugins this
+repository builds, so install them yourself (`cargo install cargo-deny cargo-audit
+--locked`). `scripts/run-ci.sh` reports both as skipped when they are absent instead of
+reporting the gate as passed.
 
 CI fails on a formatting difference, a clippy warning, a failing test, a broken
 documentation link, a broken example and an invalid profile. None of those is negotiable,
