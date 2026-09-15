@@ -21,6 +21,10 @@
 //! * [`recordings`] holds synthetic endpoint responses. They are shaped like the
 //!   documented Stellar RPC and Horizon responses and are labelled as recordings
 //!   rather than as observations: nothing here was read off a live network.
+//! * [`captures`] holds the opposite: four responses read off testnet verbatim,
+//!   with the request and the day recorded beside each. They exist because three
+//!   live defects were invisible in every hand-written document, and each of the
+//!   three is now asserted against the bytes that exposed it.
 //! * [`wasm_modules`] holds real, minimal WebAssembly modules and their digests.
 //!   They are deliberately *not* Soroban modules, because the interesting assertion
 //!   is that a module with no contract-spec section yields an unknown interface
@@ -31,6 +35,7 @@
 //! * [`corpus_readme`] generates the corpus's own index, so that a directory a reader
 //!   opens without running anything is still a checked statement.
 
+pub mod captures;
 pub mod cli;
 pub mod corpus;
 pub mod corpus_readme;

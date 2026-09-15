@@ -26,6 +26,11 @@ path = "network/network.rs"
 harness = true
 
 [[test]]
+name = "captures"
+path = "network/captures.rs"
+harness = true
+
+[[test]]
 name = "contracts"
 path = "contracts/contracts.rs"
 harness = true
@@ -94,3 +99,9 @@ amasario-export = { workspace = true }
 tokio = { workspace = true }
 tempfile = { workspace = true }
 wiremock = { workspace = true }
+
+# The capture corpus is decoded through the same types a live run uses, and those
+# types belong to the Stellar organisation's own client: `GetTransactionResponseRaw`
+# is the wire shape, and its conversion to `GetTransactionResponse` is the client's
+# own XDR decoding. A test that re-implemented either would be testing the test.
+stellar-rpc-client = { workspace = true }

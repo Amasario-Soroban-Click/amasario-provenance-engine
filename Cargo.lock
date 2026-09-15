@@ -176,6 +176,7 @@ dependencies = [
  "hex",
  "serde",
  "serde_json",
+ "stellar-rpc-client",
  "stellar-strkey 0.0.18",
  "tempfile",
  "thiserror 2.0.20",
