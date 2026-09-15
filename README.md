@@ -26,22 +26,34 @@ tested, and is pushed only when it is complete. The current state is:
 
 | Crate | Responsibility | Status |
 | --- | --- | --- |
-| `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 143 tests |
-| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | not started |
-| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | not started |
-| `amasario-provenance` | Source → build → artifact → wasm → deployment verification | not started |
-| `amasario-dependency` | Dependency discovery, classification and resolution | not started |
-| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | not started |
-| `amasario-impact` | Direct, transitive and multi-hop impact analysis | not started |
-| `amasario-evidence` | Evidence collection, verification and confidence calculation | not started |
-| `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | not started |
-| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | not started |
-| `amasario-export` | JSON, YAML, GraphML and DOT export | not started |
-| `amasario-cli` | The `amasario` command-line interface | not started |
+| `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 148 tests (+9 specification-conformance) |
+| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 98 tests |
+| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 103 tests |
+| `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 111 tests |
+| `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 85 tests |
+| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 106 tests |
+| `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 75 tests |
+| `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 74 tests |
+| `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
+| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | not implemented |
+| `amasario-export` | JSON, YAML, GraphML and DOT export | not implemented |
+| `amasario-cli` | The `amasario` command-line interface | not implemented |
+
+`cargo test --all-features` passes 854 tests across the nine crates above, including
+the per-crate integration suites (`amasario-core`, `amasario-graph` and
+`amasario-impact`). The nine specification-conformance tests in `amasario-core` are
+`#[ignore]`d by default because they read a checkout of the normative specification;
+CI provides one and runs them with `--include-ignored`.
 
 Nothing in the table is a placeholder: a crate is listed as implemented only when it
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
 as existing.
+
+`amasario-report`, `amasario-export` and `amasario-cli` are declared in
+`[workspace.dependencies]` because their manifests are already anticipated, but the
+crates themselves are absent. The workspace currently builds libraries only: there is
+no `amasario` binary and no CLI surface until `amasario-cli` is implemented. Until
+then the crates are consumed as a Rust library set.
 
 ## The four invariants `amasario-core` enforces
 
