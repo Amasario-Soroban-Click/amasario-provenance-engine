@@ -31,21 +31,34 @@
 //! the document valid. A consumer that ignores `metadata` still sees every fact the
 //! schema requires; a consumer that reads it sees why the engine believes the edge.
 //!
-//! # What is deliberately not published
+//! # How a refusal is published
 //!
-//! **`unresolved`.** `dependency-set.schema.json` has an optional `unresolved` array
-//! whose entries must state a `reason` drawn from a closed enumeration of *resolution*
-//! failures: `NOT_FOUND`, `NETWORK_ERROR`, `TIMEOUT`, `MALFORMED_RESPONSE`,
-//! `OUT_OF_BOUNDARY`, `NOT_PERMITTED`, `UNSUPPORTED`. The engine's
-//! [`crate::resolver::Unestablished`] records the opposite kind of thing: a candidate
-//! that was observed and *refused by the rules*, with its explanation as a sentence.
-//! The two vocabularies do not correspond. Every rule refusal would have to be
-//! published as `NOT_PERMITTED`, and a reader could not then tell a self-dependency
-//! from a network timeout - which is precisely the distinction
-//! `docs/verification.md` says must never be lost. Publishing `unresolved` therefore
-//! waits until [`crate::resolver::Unestablished`] carries a machine-readable reason of
-//! its own. Omitting the array is schema-valid because it is optional, and the
-//! refusals remain available on the in-memory set.
+//! `dependency-set.schema.json`'s `unresolved` array describes "dependencies that were
+//! identified but could not be resolved", and its `reason` is drawn from a closed
+//! enumeration: `NOT_FOUND`, `NETWORK_ERROR`, `TIMEOUT`, `MALFORMED_RESPONSE`,
+//! `OUT_OF_BOUNDARY`, `NOT_PERMITTED`, `UNSUPPORTED`.
+//!
+//! The engine has two distinct things that answer that description, and they are kept
+//! apart rather than merged:
+//!
+//! * A **resolution failure** - the endpoint could not be asked, the ledger is outside
+//!   the boundary, the response did not decode - is an [`EngineError`] whose category
+//!   maps to one of the six transport-shaped reasons. Those never reach this module as
+//!   an [`crate::resolver::Unestablished`]; they arrive as a failure, and a caller that
+//!   publishes one should use [`UnresolvedReason::of_error`].
+//! * A **rule refusal** - the candidate was observed and the specification would not
+//!   let it become a dependency - *is* an [`crate::resolver::Unestablished`], and it
+//!   maps to exactly one reason: [`UnresolvedReason::NotPermitted`]. That is not a
+//!   forced fit. `NOT_PERMITTED` is the schema's own word for "the specification's
+//!   rules did not permit this claim", which is the only thing `Unestablished` ever
+//!   records - [`crate::classifier::classify`] returns an error for a candidate exactly
+//!   when a dependency rule refuses it.
+//!
+//! Nothing is lost by the single reason, because `detail` carries the rest: the object,
+//! the relationship, the basis and the engine's sentence explaining the refusal. A
+//! self-dependency and a failed classification therefore read as
+//! `NOT_PERMITTED` with two different explanations, and neither is confused with a
+//! timeout - which is the distinction `docs/verification.md` requires be kept.
 //!
 //! # Identifier agreement with the graph layer
 //!
@@ -367,6 +380,140 @@ impl CycleDocument {
     }
 }
 
+/// A dependency that could not be published as an edge, and why.
+///
+/// See the module documentation: this document is where a rule refusal and a transport
+/// failure are kept apart, because both answer "could not be resolved" and only one of
+/// them means the dependency might exist.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct UnresolvedDocument {
+    /// The entity that was being resolved from, where it was known.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<EntityRef>,
+    /// Why the dependency could not be resolved.
+    pub reason: UnresolvedReason,
+    /// What happened, preserved rather than summarised.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+/// `dependency-set.schema.json`'s reason enumeration.
+///
+/// Six of the seven are transport-shaped and are reached through
+/// [`UnresolvedReason::of_category`]; the seventh, [`Self::NotPermitted`], is the only
+/// one a rule refusal can produce.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[non_exhaustive]
+pub enum UnresolvedReason {
+    /// The resource is not there. An absence, not a failure.
+    NotFound,
+    /// The endpoint could not be reached.
+    NetworkError,
+    /// The endpoint did not answer in time.
+    Timeout,
+    /// A response arrived and was not what it claimed to be.
+    MalformedResponse,
+    /// The question reaches outside the observation boundary.
+    OutOfBoundary,
+    /// The specification's rules did not permit the claim.
+    NotPermitted,
+    /// The engine does not implement the question.
+    Unsupported,
+}
+
+impl UnresolvedReason {
+    /// The stable wire name.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::NotFound => "NOT_FOUND",
+            Self::NetworkError => "NETWORK_ERROR",
+            Self::Timeout => "TIMEOUT",
+            Self::MalformedResponse => "MALFORMED_RESPONSE",
+            Self::OutOfBoundary => "OUT_OF_BOUNDARY",
+            Self::NotPermitted => "NOT_PERMITTED",
+            Self::Unsupported => "UNSUPPORTED",
+        }
+    }
+
+    /// The reason a failure is, where the failure is a resolution failure.
+    ///
+    /// Returns `None` for anything else. A configuration error or an internal defect is
+    /// a defect in the run rather than a dependency that could not be resolved, and
+    /// publishing one as `UNSUPPORTED` would put a bug into a document as though it were
+    /// a finding - which is the one thing a provenance document must not contain.
+    ///
+    /// Only four of the seven reasons are reachable this way, and the three that are not
+    /// are reachable only as explicit values, which is honest rather than incomplete:
+    /// the engine's error model has no separate timeout variant (a timeout arrives as a
+    /// retryable network failure, with the endpoint's own explanation in `detail`), and
+    /// `OUT_OF_BOUNDARY` and `UNSUPPORTED` describe a decision the caller made rather
+    /// than a failure the engine had.
+    #[must_use]
+    pub const fn of_error(error: &EngineError) -> Option<Self> {
+        match error {
+            EngineError::ContractNotFound { .. } => Some(Self::NotFound),
+            EngineError::MalformedResponse { .. } => Some(Self::MalformedResponse),
+            EngineError::Network { .. } => Some(Self::NetworkError),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for UnresolvedReason {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
+/// The longest `detail` the schema accepts.
+///
+/// `dependency-set.schema.json` caps the field at 2048 characters, and a producer that
+/// ignored the cap would publish a document its own specification rejects.
+const MAX_UNRESOLVED_DETAIL: usize = 2048;
+
+/// One refusal, as the document publishes it.
+///
+/// The engine's `Unestablished` names the object, the relationship and the basis, and
+/// the schema's entry has a place for none of them. They are therefore folded into
+/// `detail` rather than dropped: a reader diagnosing a refusal needs to know *what* was
+/// refused and under which relationship, and a `NOT_PERMITTED` with no object would be
+/// an unexplained refusal.
+fn unresolved_of(
+    subject: &EntityRef,
+    candidate: &crate::resolver::Unestablished,
+) -> UnresolvedDocument {
+    let mut detail = format!(
+        "{} {} is not permitted: {}",
+        candidate.relationship.as_str(),
+        candidate.object,
+        candidate.reason
+    );
+    if let Some(observed) = &candidate.detail {
+        detail.push_str("; observed: ");
+        detail.push_str(observed);
+    }
+    detail.push_str(&format!("; basis {}", candidate.basis.as_str()));
+
+    UnresolvedDocument {
+        source: Some(subject.clone()),
+        reason: UnresolvedReason::NotPermitted,
+        detail: Some(truncate_detail(&detail)),
+    }
+}
+
+/// Truncates a detail to the schema's cap, on a character boundary.
+fn truncate_detail(detail: &str) -> String {
+    if detail.chars().count() <= MAX_UNRESOLVED_DETAIL {
+        return detail.to_owned();
+    }
+    let mut truncated: String = detail.chars().take(MAX_UNRESOLVED_DETAIL - 1).collect();
+    truncated.push('…');
+    truncated
+}
+
 /// A dependency set, in the shape `dependency-set.schema.json` defines.
 ///
 /// The schema requires `edges` and nothing else, and requires that each edge also
@@ -381,14 +528,28 @@ pub struct DependencySetDocument {
     /// Every edge in the set.
     pub edges: Vec<DependencyEdgeDocument>,
     /// The identifiers of the one-hop edges.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    ///
+    /// `default` as well as `skip_serializing_if`, and the pair is what makes the
+    /// document round-trip: omitting an empty array is right, but a reader that then
+    /// refused to parse the document it had just written would be a producer whose own
+    /// output it cannot read. The integration suite catches exactly that, which is how
+    /// this omission was found.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub direct: Vec<String>,
     /// The identifiers of the edges reached only through an intermediate entity.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transitive: Vec<String>,
     /// Cycles detected, reported rather than resolved.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cycles: Vec<CycleDocument>,
+    /// Dependencies that were identified but could not become edges.
+    ///
+    /// Kept separate from `edges` because a refusal and an absent dependency are
+    /// different findings, and because a consumer that merged them would report a
+    /// contract as not depending on something when the engine was actually told it
+    /// does and could not publish the claim.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unresolved: Vec<UnresolvedDocument>,
     /// The traversal depth the analysis was bounded by.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_depth: Option<usize>,
@@ -433,12 +594,22 @@ impl DependencySetDocument {
             cycles.push(CycleDocument::of(cycle)?);
         }
 
+        // Refusals are published in the set's own canonical order, which `resolve`
+        // already established, so the document's bytes do not depend on which order the
+        // candidates happened to be observed in.
+        let unresolved: Vec<UnresolvedDocument> = set
+            .unestablished
+            .iter()
+            .map(|candidate| unresolved_of(&set.subject, candidate))
+            .collect();
+
         Ok(Self {
             id: None,
             edges,
             direct,
             transitive,
             cycles,
+            unresolved,
             max_depth: Some(set.max_depth),
             truncated: Some(set.truncated),
             truncation_reason: set.truncation_reason,
@@ -769,12 +940,38 @@ mod tests {
         );
     }
 
+    /// A set holding one candidate the rules refuse.
+    ///
+    /// The refusal is the interesting one and it is real: an invocation the endpoint
+    /// did not report as succeeding cannot establish a `RUNTIME` dependency, so
+    /// `classify` refuses it and `resolve` records the refusal rather than an edge.
+    fn refused_set() -> DependencySet {
+        let refused = Candidate::new(
+            entity(EntityKind::Contract, "C-subject"),
+            entity(EntityKind::Contract, "C-refused"),
+            Relationship::Invocates,
+            Basis::ObservedInvocation,
+            vec![EvidenceRef::new(EvidenceType::Transaction, "c".repeat(64)).expect("a citation")],
+        )
+        .expect("a candidate")
+        .observed_at(boundary())
+        // The three-valued outcome is what keeps "the endpoint said it failed" and
+        // "the endpoint did not say" from being the same thing.
+        .with_outcome(None);
+
+        resolve(
+            entity(EntityKind::Contract, "C-subject"),
+            Some(boundary()),
+            &[refused],
+            1,
+        )
+        .expect("resolves")
+    }
+
     #[test]
-    fn a_set_document_omits_the_unresolved_array_and_says_so() {
-        // The schema's `unresolved` vocabulary is resolution failures; the engine's
-        // refusals are rule violations. Until `Unestablished` carries a
-        // machine-readable reason of the right kind, publishing the array would mean
-        // reporting every refusal as NOT_PERMITTED.
+    fn a_set_without_refusals_omits_the_unresolved_array() {
+        // An absent optional field and an empty one must not be confused, and the
+        // schema makes the array optional for exactly that reason.
         let value = serde_json::to_value(DependencySetDocument::of(&set()).expect("projects"))
             .expect("serialises");
         assert!(
@@ -782,8 +979,102 @@ mod tests {
                 .as_object()
                 .expect("an object")
                 .contains_key("unresolved"),
-            "unresolved is deliberately not published yet"
+            "a set with nothing refused publishes no unresolved array"
         );
+    }
+
+    #[test]
+    fn a_rule_refusal_is_published_as_not_permitted_with_its_reason() {
+        // The point of publishing this at all: a consumer that could not see the
+        // refusal would read the absence of an edge as the absence of a dependency.
+        let document = DependencySetDocument::of(&refused_set()).expect("projects");
+        assert!(document.edges.is_empty(), "the candidate was refused");
+        assert_eq!(document.unresolved.len(), 1);
+
+        let entry = &document.unresolved[0];
+        assert_eq!(entry.reason, UnresolvedReason::NotPermitted);
+        assert_eq!(entry.reason.as_str(), "NOT_PERMITTED");
+        assert_eq!(
+            entry.source.as_ref().map(|source| source.id.as_str()),
+            Some("C-subject"),
+            "the depending entity is named, so the refusal is attributable"
+        );
+
+        let detail = entry.detail.as_deref().expect("a detail");
+        assert!(
+            detail.contains("C-refused"),
+            "the object has no field of its own, so it must survive in the detail: {detail}"
+        );
+        assert!(
+            detail.contains("OBSERVED_INVOCATION"),
+            "the basis must survive too: {detail}"
+        );
+    }
+
+    #[test]
+    fn a_refusal_is_not_published_as_a_resolution_failure() {
+        // The distinction the documentation promises: a rule refusal is
+        // NOT_PERMITTED and a transport failure is something else. A publisher that
+        // collapsed both into one reason would make a self-dependency
+        // indistinguishable from an unreachable endpoint.
+        let document = DependencySetDocument::of(&refused_set()).expect("projects");
+        for entry in &document.unresolved {
+            assert_ne!(entry.reason, UnresolvedReason::NetworkError);
+            assert_ne!(entry.reason, UnresolvedReason::Timeout);
+            assert_ne!(entry.reason, UnresolvedReason::NotFound);
+        }
+    }
+
+    #[test]
+    fn a_resolution_failure_maps_to_its_own_reason_and_a_defect_maps_to_none() {
+        use amasario_core::EngineError;
+
+        assert_eq!(
+            UnresolvedReason::of_error(&EngineError::ContractNotFound {
+                contract_id: "C".to_owned(),
+                network: "testnet".to_owned(),
+                ledger: 4_242,
+            }),
+            Some(UnresolvedReason::NotFound)
+        );
+        assert_eq!(
+            UnresolvedReason::of_error(&EngineError::transient_network("https://rpc", "timeout")),
+            Some(UnresolvedReason::NetworkError)
+        );
+        assert_eq!(
+            UnresolvedReason::of_error(&EngineError::Configuration("no endpoint".to_owned())),
+            None,
+            "a configuration error is a defect in the run, not an unresolved dependency"
+        );
+        assert_eq!(
+            UnresolvedReason::of_error(&EngineError::Internal("invariant".to_owned())),
+            None
+        );
+    }
+
+    #[test]
+    fn an_over_long_refusal_detail_is_truncated_to_what_the_schema_accepts() {
+        // `dependency-set.schema.json` caps `detail` at 2048 characters. Exceeding it
+        // would publish a document the specification itself rejects.
+        let long = "x".repeat(MAX_UNRESOLVED_DETAIL * 2);
+        let truncated = truncate_detail(&long);
+        assert_eq!(truncated.chars().count(), MAX_UNRESOLVED_DETAIL);
+        assert!(truncated.ends_with('…'));
+
+        let short = truncate_detail("a short refusal");
+        assert_eq!(short, "a short refusal");
+    }
+
+    #[test]
+    fn a_refusal_reaches_the_serialised_document() {
+        // The field has to survive `to_value`, not only exist on the struct.
+        let value =
+            serde_json::to_value(DependencySetDocument::of(&refused_set()).expect("projects"))
+                .expect("serialises");
+        let unresolved = value["unresolved"].as_array().expect("an array");
+        assert_eq!(unresolved.len(), 1);
+        assert_eq!(unresolved[0]["reason"], "NOT_PERMITTED");
+        assert_eq!(unresolved[0]["source"]["kind"], "CONTRACT");
     }
 
     #[test]
