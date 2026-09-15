@@ -833,7 +833,7 @@ fn evidence_changes(
                     ),
                 )
                 .with_after(Some(after_value.clone()))
-                .at_path("/evidence"),
+                .at_path(element_path("evidence", id)),
             ),
             Some((_, before_value)) if before_value != after_value => changes.push(
                 DiffEntry::new(
@@ -847,7 +847,7 @@ fn evidence_changes(
                 )
                 .with_before(Some(before_value.clone()))
                 .with_after(Some(after_value.clone()))
-                .at_path("/evidence"),
+                .at_path(element_path("evidence", id)),
             ),
             Some(_) => {},
         }
@@ -865,11 +865,33 @@ fn evidence_changes(
                     ),
                 )
                 .with_before(Some(before_value.clone()))
-                .at_path("/evidence"),
+                .at_path(element_path("evidence", id)),
             );
         }
     }
     Ok(())
+}
+
+/// The path an element of a collection is reported at.
+///
+/// The element's identity belongs in the path because the path is part of the change
+/// identifier. Two additions to one collection are two changes, and reporting both at a
+/// bare `/impact` would give them one identifier - which the diff's own duplicate rule
+/// then refuses, leaving no diff at all. The segment is escaped as RFC 6901 requires, so
+/// that an identifier containing a slash cannot invent a level of nesting.
+fn element_path(collection: &str, element: &str) -> String {
+    let escaped = element.replace('~', "~0").replace('/', "~1");
+    format!("/{collection}/{escaped}")
+}
+
+/// The comparable triple one relationship asserts.
+fn triple_of(dependency: &amasario_dependency::Dependency) -> String {
+    let (subject_kind, subject_id) = entity_key(&dependency.subject);
+    let (object_kind, object_id) = entity_key(&dependency.object);
+    format!(
+        "{subject_kind}:{subject_id} -{}-> {object_kind}:{object_id}",
+        dependency.relationship.as_str()
+    )
 }
 
 /// The relationship triples a snapshot asserts, as comparable strings.
@@ -883,17 +905,7 @@ fn relationship_triples(snapshot: &Snapshot) -> Vec<String> {
         .dependencies
         .as_ref()
         .map_or_else(Vec::new, |dependencies| {
-            let mut triples: Vec<String> = dependencies
-                .all()
-                .map(|dependency| {
-                    let (subject_kind, subject_id) = entity_key(&dependency.subject);
-                    let (object_kind, object_id) = entity_key(&dependency.object);
-                    format!(
-                        "{subject_kind}:{subject_id} -{}-> {object_kind}:{object_id}",
-                        dependency.relationship.as_str()
-                    )
-                })
-                .collect();
+            let mut triples: Vec<String> = dependencies.all().map(triple_of).collect();
             triples.sort();
             triples.dedup();
             triples
@@ -922,7 +934,7 @@ fn relationship_changes(
                     ),
                 )
                 .with_after(Some(Value::String(triple.clone())))
-                .at_path("/dependencies"),
+                .at_path(element_path("dependencies", triple)),
             );
         }
     }
@@ -939,7 +951,7 @@ fn relationship_changes(
                     ),
                 )
                 .with_before(Some(Value::String(triple.clone())))
-                .at_path("/dependencies"),
+                .at_path(element_path("dependencies", triple)),
             );
         }
     }
@@ -981,7 +993,7 @@ fn relationship_changes(
             )
             .with_before(Some(value_of(earlier)?))
             .with_after(Some(value_of(dependency)?))
-            .at_path("/dependencies"),
+            .at_path(element_path("dependencies", &triple_of(dependency))),
         );
     }
     Ok(())
@@ -1040,7 +1052,7 @@ fn impact_changes(before: &Snapshot, after: &Snapshot, changes: &mut Vec<DiffEnt
                     ),
                 )
                 .with_after(Some(Value::String(finding.id.clone())))
-                .at_path("/impact"),
+                .at_path(element_path("impact", &finding.id)),
             );
         }
     }
@@ -1058,7 +1070,7 @@ fn impact_changes(before: &Snapshot, after: &Snapshot, changes: &mut Vec<DiffEnt
                     ),
                 )
                 .with_before(Some(Value::String(finding.id.clone())))
-                .at_path("/impact"),
+                .at_path(element_path("impact", &finding.id)),
             );
         }
     }
@@ -1192,7 +1204,9 @@ mod tests {
             .expect("an evidence change");
         assert_eq!(added.change_type, ChangeType::Added);
         assert!(added.reason.contains("e-2"), "got: {}", added.reason);
-        assert_eq!(added.path.as_deref(), Some("/evidence"));
+        // The path names the record, not the collection: the path is part of the change
+        // identifier, and two records added at one boundary are two changes.
+        assert_eq!(added.path.as_deref(), Some("/evidence/e-2"));
         diff.validate().expect("valid");
         assert_eq!(
             diff.summary.as_ref().expect("a summary").total,
