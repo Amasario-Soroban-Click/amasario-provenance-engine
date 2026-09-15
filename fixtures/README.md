@@ -2,18 +2,26 @@
 
 # The fixture corpus
 
-Every file here is written by
+Almost every file here is written by
 `cargo run -p amasario-integration-tests --bin generate-fixtures`, which builds
-each document from the engine's own types. Nothing here was typed by hand, and
-each suite under `integration-tests/` asserts that the committed bytes equal what
-the builders produce - so a diff in this directory means the model changed.
+each document from the engine's own types. Each suite under `integration-tests/`
+asserts that the committed bytes equal what the builders produce - so a diff in
+this directory means the model changed.
 
-A fixture is not a claim about a network. The documents under `transactions/`,
-`ledgers/` and the RPC error files under `contracts/` are *recorded endpoint
-responses*: they are shaped like the documented Stellar RPC and Horizon responses
-they stand in for, so that the adapters' own parsers are what decode them. Nothing
-here was read off a live chain, and no analysis result is asserted that was not
-derived from a document in this directory.
+The exception is the four files marked *captured* below. Those are transcriptions
+of responses a live testnet endpoint returned, committed verbatim, together with
+the request that produced them and the day it was read. They are not generated,
+because a generated response would encode the assumption under test: three of the
+defects this engine has had - the reading of a nested call, the location of the
+host's diagnostic events, and the event index's own floor - were invisible in
+every hand-written document and obvious in these.
+
+A fixture is not a claim about a network. The *recorded* files under
+`transactions/`, `ledgers/` and `contracts/` are shaped like the documented
+Stellar RPC and Horizon responses they stand in for, so that the adapters' own
+parsers are what decode them; they were not read off a chain. The *captured*
+files were, and they are labelled as such. No analysis result is asserted that
+was not derived from a document in this directory.
 
 ## Contents
 
@@ -59,12 +67,14 @@ Finding sets produced by propagating a declared change through the graph.
 
 ### `ledgers/`
 
-Recorded ledger and network-identity responses.
+Recorded ledger and network-identity responses, alongside the captured responses that fix the retention window's floor and the event page's shape.
 
 * `horizon-ledger-1044.json` - one closed ledger as Horizon reports it, with its transaction counts
 * `rpc-latest-ledger.json` - the RPC endpoint's view of the chain tip, which is what the boundary's ledger is read from
 * `rpc-network-testnet.json` - the network identity the endpoint reports, which is what the passphrase check compares against
 * `rpc-network-futurenet.json` - a network identity for a chain that is not the one the caller named
+* `rpc-get-health.json` - *captured* from testnet by `getHealth` on 2026-09-15; the node's own view of its retention window: the tip, the oldest ledger it retains, and the window's length - the floor a bounded scan is measured against
+* `rpc-get-events-contract.json` - *captured* from testnet by `getEvents` on 2026-09-15; a page of contract events for one contract, with the cursor a following page is asked for: the shape the event scan reads, and the reason a full page is not the end of a scan
 
 ### `provenance/`
 
@@ -84,9 +94,11 @@ Two captures of one contract at one boundary, differing so that a diff has an ad
 
 ### `transactions/`
 
-Recorded transaction responses, including one the ledger reports as failed.
+Recorded transaction responses, including one the ledger reports as failed, alongside two captured transactions: one that made a nested call and one that did not.
 
 * `horizon-contract-transactions.json` - one page of a contract's Horizon transaction history: one successful call and one that failed
+* `rpc-get-transaction-nested-call.json` - *captured* from testnet by `getTransaction` on 2026-09-15; a successful transaction that entered one contract which called another: the only real evidence of nesting in the corpus, and the response that disproved the reading of the host's `fn_call` diagnostic that the engine had
+* `rpc-get-transaction-direct-call.json` - *captured* from testnet by `getTransaction` on 2026-09-15; a successful transaction whose only call is one top-level `InvokeContract`: the control case that separates "this transaction made no nested call" from "this engine cannot read nested calls"
 
 ### `wasm/`
 
