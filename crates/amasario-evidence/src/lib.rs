@@ -74,8 +74,13 @@ pub mod artifact;
 pub mod collector;
 pub mod confidence;
 pub mod deployment;
+pub mod document;
 pub mod errors;
 pub mod event;
 pub mod source;
 pub mod transaction;
 pub mod verifier;
+
+// The published document shape. Re-exported here so that a caller assembling a
+// snapshot or a report does not have to know which module it lives in.
+pub use document::EvidenceDocument;
