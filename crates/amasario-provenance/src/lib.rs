@@ -1,5 +1,5 @@
-//! Provenance analysis: which source tree a deployed artifact came from, and what
-//! supports the claim.
+//! Provenance analysis: which source tree a deployed artifact came from, what
+//! produced it, and what supports the claim.
 //!
 //! # What this crate is for
 //!
@@ -25,6 +25,18 @@
 //! **Not being able to check is not a refutation.** [`ProvenanceFailure`] separates an
 //! unrecorded record from an unverifiable one from a contradicted one, and only the
 //! last makes a claim false.
+//!
+//! **An artifact is its digest.** [`ArtifactIdentity`] identifies an artifact by
+//! content: a filename is a build tool's choice and a size can be padded, while the
+//! digest is the only property that survives a copy, a rename and a different machine.
+//! [`ArtifactIdentity::matches`] therefore compares digests and never names.
+//!
+//! **A build record says what was recorded, not what happened.** [`BuildProvenance`]
+//! requires its toolchain to be named, because a record that omits it cannot reproduce
+//! the artifact and would otherwise read as a reproducible build. The recorded
+//! environment is [sanitised](build::sanitise_environment): a build environment
+//! routinely contains credentials, and copying them into a snapshot or a log is the
+//! failure mode this crate is written to avoid.
 //!
 //! # What this crate does not claim
 //!
@@ -57,12 +69,21 @@
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
+pub mod artifact;
+pub mod build;
 pub mod errors;
 pub mod source;
 
-// Re-exported together because they are used together: a caller recording a source
-// needs the failure model that says what could not be established about it, and
-// having to know which module each lives in would be friction with no benefit.
+// Re-exported together because they are used together: a caller recording a source,
+// a build and the artifact it produced needs the failure model that says what could
+// not be established about them, and having to know which module each lives in would
+// be friction with no benefit. The constants travel with them so that a caller can
+// name a redaction rather than restate a string.
+pub use artifact::{ArtifactIdentity, ArtifactType, DerivationSource, compare_digests};
+pub use build::{
+    BuildProvenance, EnvironmentVariable, REDACTED, Reproducibility, ReproducibilityStatus,
+    Toolchain, is_secret_name, sanitise_environment,
+};
 pub use errors::{ProvenanceFailure, describe as describe_failure, first_failure};
 pub use source::{Repository, Revision, RevisionKind, SourceProvenance, VcsKind};
 
@@ -77,5 +98,8 @@ mod tests {
         // discovered downstream rather than here.
         assert_eq!(VcsKind::Git.as_str(), "GIT");
         assert_eq!(RevisionKind::Commit.as_str(), "COMMIT");
+        assert_eq!(ArtifactType::Wasm.as_str(), "WASM");
+        assert_eq!(ReproducibilityStatus::Reproduced.as_str(), "REPRODUCED");
+        assert_eq!(REDACTED, "<redacted>");
     }
 }
