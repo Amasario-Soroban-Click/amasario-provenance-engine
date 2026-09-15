@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/amasario-cli",
   "crates/amasario-core",
   "crates/amasario-network",
   "crates/amasario-contract",

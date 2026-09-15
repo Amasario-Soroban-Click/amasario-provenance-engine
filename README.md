@@ -26,20 +26,20 @@ tested, and is pushed only when it is complete. The current state is:
 
 | Crate | Responsibility | Status |
 | --- | --- | --- |
-| `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 148 tests (+9 specification-conformance) |
-| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 98 tests |
-| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 103 tests |
-| `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 111 tests |
-| `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 85 tests |
-| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 106 tests |
-| `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 75 tests |
-| `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 74 tests |
+| `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 149 tests (+9 specification-conformance) |
+| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 99 tests |
+| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 104 tests |
+| `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 113 tests |
+| `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 97 tests |
+| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 107 tests |
+| `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 76 tests |
+| `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 83 tests |
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
 | `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 29 tests |
 | `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
-| `amasario-cli` | The `amasario` command-line interface | not implemented |
+| `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 24 tests |
 
-`cargo test --all-features` passes 930 tests across the eleven crates above, including
+`cargo test --all-features` passes 954 tests across the twelve crates above, including
 the per-crate integration suites (`amasario-core`, `amasario-graph` and
 `amasario-impact`). The nine specification-conformance tests in `amasario-core` are
 `#[ignore]`d by default because they read a checkout of the normative specification;
@@ -49,10 +49,30 @@ Nothing in the table is a placeholder: a crate is listed as implemented only whe
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
 as existing.
 
-`amasario-cli` is the last crate outstanding. The workspace therefore builds libraries
-only: there is no `amasario` binary and no CLI surface until it lands. Until then the
-crates are consumed as a Rust library set, and every documented command in this README's
-sibling projects is aspirational rather than runnable.
+The workspace now builds a binary as well as libraries. `cargo run -p amasario-cli --`,
+or the installed `amasario`, exposes eleven subcommands:
+
+```console
+amasario inspect      --contract CABC... --network testnet
+amasario discover     --contract CABC... --network testnet
+amasario provenance   --contract CABC... --network testnet --artifact-digest <hex>
+amasario dependencies --contract CABC... --network testnet --depth 5
+amasario graph        --contract CABC... --network testnet --format dot
+amasario impact       --contract CABC... --network testnet --change-type MODIFIED
+amasario snapshot create --contract CABC... --network testnet --output snapshots/
+amasario snapshot show   --input snapshots/<file>.json
+amasario diff         --before a.json --after b.json
+amasario verify       --contract CABC... --network testnet --require verified
+amasario report       --contract CABC... --network testnet --format markdown
+amasario export       --input snapshot.json --format graphml
+```
+
+The result goes to stdout - or to the path named by `--output` - and narration goes to
+stderr, so a pipeline may consume stdout without stripping commentary. A run exits zero
+only when it completed and passed any gate it was asked to enforce; a usage problem
+exits 2, a failed gate exits 1, and an engine failure exits with a code derived from the
+specification's error category, so a CI job can tell a network failure from a provenance
+contradiction without parsing a message.
 
 ## Document conformance
 
