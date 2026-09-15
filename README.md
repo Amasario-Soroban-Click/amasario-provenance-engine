@@ -21,8 +21,8 @@ implementation type is required to consume a model, it lives here and says so.
 
 ## Status
 
-The workspace is being built in verifiable batches, each of which compiles, is
-tested, and is pushed only when it is complete. The current state is:
+Every layer below is complete: it compiles, it is lint-clean, and it has tests. The
+counts are the ones `cargo test --workspace --all-features` reports, not estimates.
 
 | Crate | Responsibility | Status |
 | --- | --- | --- |
@@ -30,20 +30,26 @@ tested, and is pushed only when it is complete. The current state is:
 | `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 99 tests |
 | `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 104 tests |
 | `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 113 tests |
-| `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 97 tests |
+| `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 102 tests |
 | `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 107 tests |
 | `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 76 tests |
 | `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 83 tests |
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
 | `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 29 tests |
 | `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
-| `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 24 tests |
+| `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 27 tests |
 
-`cargo test --all-features` passes 954 tests across the twelve crates above, including
-the per-crate integration suites (`amasario-core`, `amasario-graph` and
-`amasario-impact`). The nine specification-conformance tests in `amasario-core` are
-`#[ignore]`d by default because they read a checkout of the normative specification;
-CI provides one and runs them with `--include-ignored`.
+`cargo test --workspace --all-features` passes **1070 tests**, of which 962 are the unit
+and per-crate suites of the twelve crates above and 108 are the nine end-to-end suites
+in `integration-tests` — `network`, `contracts`, `provenance`, `dependencies`, `graphs`,
+`impact`, `snapshots`, `verification` and `reports`. Those suites run against a
+generated corpus under `fixtures/` and never reach the live network, so CI does not go
+flaky because a public endpoint was busy.
+
+The nine specification-conformance tests in `amasario-core` are `#[ignore]`d by default
+because they read a checkout of the normative specification; CI provides one and runs
+them with `--include-ignored`. Nine ignored tests are therefore expected in a plain
+`cargo test` run, and none of them are skipped work.
 
 Nothing in the table is a placeholder: a crate is listed as implemented only when it
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
@@ -195,6 +201,27 @@ The engine consumes the schemas, taxonomies, rules and vectors published by
 is detectable as a schema validation failure rather than as a silently different
 analysis result, and the `vectors/` suite is the mechanism: the engine is expected to
 reproduce each vector's canonical serialisation and digest byte for byte.
+
+## Documentation
+
+| Page | What it covers |
+| --- | --- |
+| [`docs/architecture.md`](docs/architecture.md) | Crate boundaries, the pipeline, and why the split is where it is |
+| [`docs/data-flow.md`](docs/data-flow.md) | One run end to end, from CLI arguments to an exported document |
+| [`docs/cli.md`](docs/cli.md) | Every subcommand, its flags, its exit codes and its output |
+| [`docs/contract-discovery.md`](docs/contract-discovery.md) | What inspection can and cannot obtain |
+| [`docs/provenance.md`](docs/provenance.md) | The source → revision → build → artifact → wasm → deployment chain |
+| [`docs/verification.md`](docs/verification.md) | The five verification statuses and how each is reached |
+| [`docs/evidence.md`](docs/evidence.md) | Evidence records, confidence, and why confidence is not evidence |
+| [`docs/dependency-analysis.md`](docs/dependency-analysis.md) | Discovery, classification and what is deliberately not inferred |
+| [`docs/graph-analysis.md`](docs/graph-analysis.md) | Nodes, edges, traversal, paths and cycles |
+| [`docs/impact-analysis.md`](docs/impact-analysis.md) | Direct, transitive and multi-hop impact |
+| [`docs/snapshots.md`](docs/snapshots.md) | Capture, normalisation, the content digest and comparison |
+| [`docs/output-formats.md`](docs/output-formats.md) | JSON, YAML, Markdown, DOT, GraphML and JUnit |
+| [`docs/testnet.md`](docs/testnet.md) | Running against testnet, and the observation boundary |
+| [`docs/ci-integration.md`](docs/ci-integration.md) | Using the engine as a build gate |
+| [`docs/security.md`](docs/security.md) | The security boundaries, stated as what the tool does not claim |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Exit codes, and each failure mode with its cause and remedy |
 
 ## Licence
 
