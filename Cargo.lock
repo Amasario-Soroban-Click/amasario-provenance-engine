@@ -70,6 +70,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "amasario-export"
+version = "1.0.0"
+dependencies = [
+ "amasario-core",
+ "amasario-dependency",
+ "amasario-graph",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "amasario-graph"
 version = "1.0.0"
 dependencies = [
@@ -137,6 +150,7 @@ dependencies = [
  "amasario-core",
  "amasario-dependency",
  "amasario-evidence",
+ "amasario-export",
  "amasario-graph",
  "amasario-impact",
  "serde",

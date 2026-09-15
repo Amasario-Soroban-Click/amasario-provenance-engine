@@ -35,11 +35,11 @@ tested, and is pushed only when it is complete. The current state is:
 | `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 75 tests |
 | `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 74 tests |
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
-| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 28 tests |
-| `amasario-export` | JSON, YAML, GraphML and DOT export | not implemented |
+| `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 29 tests |
+| `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
 | `amasario-cli` | The `amasario` command-line interface | not implemented |
 
-`cargo test --all-features` passes 902 tests across the ten crates above, including
+`cargo test --all-features` passes 930 tests across the eleven crates above, including
 the per-crate integration suites (`amasario-core`, `amasario-graph` and
 `amasario-impact`). The nine specification-conformance tests in `amasario-core` are
 `#[ignore]`d by default because they read a checkout of the normative specification;
@@ -49,11 +49,10 @@ Nothing in the table is a placeholder: a crate is listed as implemented only whe
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
 as existing.
 
-`amasario-export` and `amasario-cli` are declared in `[workspace.dependencies]`
-because their manifests are already anticipated, but the crates themselves are absent.
-The workspace currently builds libraries only: there is no `amasario` binary and no CLI
-surface until `amasario-cli` is implemented. Until then the crates are consumed as a
-Rust library set.
+`amasario-cli` is the last crate outstanding. The workspace therefore builds libraries
+only: there is no `amasario` binary and no CLI surface until it lands. Until then the
+crates are consumed as a Rust library set, and every documented command in this README's
+sibling projects is aspirational rather than runnable.
 
 ## Document conformance
 
@@ -66,10 +65,10 @@ checked to validate with zero errors.
 
 A projection exists wherever the engine's internal model is richer than the document it
 publishes - `GraphDocument` over `Graph`, `DependencyDocument` over `Dependency`,
-`EvidenceDocument` over `EvidenceRecord`. The detail with no schema field is either
-placed in the schema's one open object, `metadata`, or dropped with the loss written
-down in the module that drops it. It is never renamed into a field that means something
-else.
+`EvidenceDocument` over `EvidenceRecord`, `Report` over the analysis it describes. The
+detail with no schema field is either placed in the schema's one open object, `metadata`,
+or dropped with the loss written down in the module that drops it. It is never renamed
+into a field that means something else.
 
 ## The four invariants `amasario-core` enforces
 

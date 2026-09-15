@@ -1,0 +1,34 @@
+[package]
+name = "amasario-export"
+description = "Machine-readable export for Amasario: JSON, YAML, GraphML and DOT, each preserving enough of a graph to reconstruct it and follow its evidence references."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-core = { workspace = true }
+amasario-graph = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+# The structured failures are a requirement of the specification rather than a
+# convenience, so a caller can act on which kind of failure it got.
+thiserror = { workspace = true }
+# YAML is a first-class export format here rather than a JSON alias: a graph document
+# is read by people as often as by programs, and the maintained YAML parser is the one
+# already chosen for contributor-authored input.
+serde_norway = { workspace = true }
+
+[dev-dependencies]
+# The tests build real graphs to export, and a graph is assembled from resolved
+# dependencies. A dev-dependency rather than a dependency because exporting a document
+# must not require the layer that produced it.
+amasario-dependency = { workspace = true }

@@ -1,32 +1,36 @@
-//! The DOT renderer, for a picture of the graph.
+//! The DOT rendering of a report's graph.
 //!
-//! # What DOT is for here, and what it cannot say
+//! # Why this module is thin
+//!
+//! `amasario-export` holds the engine's DOT renderer, and this module calls it. Two
+//! renderers for one format drift, and a reader comparing a report's picture with an
+//! exported picture would have no way to tell which of the two was wrong. What belongs
+//! here is only the part that is about a *report* rather than about a graph: which graph
+//! to draw, and what to say when there is none.
+//!
+//! # What DOT cannot express, and what the renderer does about it
 //!
 //! DOT draws topology. It has no way to express that an edge was inferred rather than
 //! observed, that its confidence was assembled from a weaker link, or that the analysis
-//! stopped early - and a graph picture that silently omitted those facts would be the
-//! most persuasive form of the overstatement the specification forbids. Three decisions
-//! follow:
-//!
-//! * An inferred edge is drawn **dashed** and an observed one solid, so the distinction
-//!   that `dependency-edge.schema.json` calls out as the one most easily lost survives
-//!   the rendering.
-//! * The confidence level is written on the edge, because a reader comparing two edges
-//!   needs to see that they do not carry the same weight.
-//! * A truncated graph carries a node stating that it is truncated. A picture is where
-//!   completeness is most easily assumed and least easily checked.
+//! stopped early - and a graph picture that silently omitted those would be the most
+//! persuasive form of the overstatement the specification forbids. The renderer answers
+//! each: an inferred edge is drawn dashed, the confidence level is written on the edge,
+//! the evidence citations travel as attributes, and a truncated graph gets a node saying
+//! so. See [`amasario_export::dot`] for the details.
 //!
 //! # Why the graph and not the report
 //!
 //! [`render`] draws [`Report::graph`], which is held in memory and deliberately absent
-//! from the published document: `report.schema.json` has no field for a graph. Drawing
+//! from the published document: `report.schema.json` has no field for a graph, and
+//! `additionalProperties: false` means adding one would invalidate the document. Drawing
 //! the relationship findings instead would produce a picture of the explanations rather
-//! than of the topology. When a report carries no graph, the renderer says so rather
-//! than emitting an empty digraph, because an empty picture reads as "nothing is
-//! related" rather than "this report has no graph".
+//! than of the topology.
+//!
+//! When a report carries no graph the renderer fails rather than emitting an empty
+//! digraph, because an empty picture reads as "nothing is related" rather than as "there
+//! is nothing to draw".
 
-use amasario_core::Result;
-
+use amasario_core::{EngineError, Result};
 use amasario_graph::GraphDocument;
 
 use crate::model::Report;
@@ -36,10 +40,10 @@ use crate::model::Report;
 /// # Errors
 ///
 /// Returns a report error when the report carries no graph, because an empty digraph
-/// would be read as a finding.
+/// would be read as a finding about the topology rather than as an absence of one.
 pub fn render(report: &Report) -> Result<String> {
     let graph = report.graph.as_ref().ok_or_else(|| {
-        amasario_core::EngineError::Report(
+        EngineError::Report(
             "this report carries no graph, so there is nothing to draw as DOT; a report \
              document has no graph field, and an empty digraph would read as a finding \
              about the topology rather than as an absence of one"
@@ -50,77 +54,21 @@ pub fn render(report: &Report) -> Result<String> {
 }
 
 /// Renders a graph document as DOT.
+///
+/// A thin alias for the export crate's renderer, kept so that a caller holding a report
+/// does not have to reach into another crate to draw its graph.
 #[must_use]
 pub fn render_graph(graph: &GraphDocument) -> String {
-    let mut out = String::from("digraph amasario {\n");
-    out.push_str("  rankdir=LR;\n");
-    // The label is set on the graph rather than emitted as a node because a node would
-    // appear in any downstream analysis of the picture as though it were an entity.
-    if let Some(boundary) = &graph.boundary {
-        out.push_str(&format!(
-            "  label=\"{}\";\n  labelloc=\"t\";\n",
-            escape(&format!(
-                "{} at ledger {}",
-                boundary.network.id, boundary.ledger
-            ))
-        ));
-    }
-
-    for node in &graph.nodes {
-        out.push_str(&format!(
-            "  \"{}\" [label=\"{}\"];\n",
-            escape(&node.id),
-            escape(&node.id)
-        ));
-    }
-
-    for edge in &graph.edges {
-        // Dashed for an inference, solid for an observation. This is the one distinction
-        // a reader of a picture can check at a glance, and it is also the one
-        // `dependency-edge.schema.json` says is most easily lost in serialisation.
-        let style = if edge.observed { "solid" } else { "dashed" };
-        out.push_str(&format!(
-            "  \"{}\" -> \"{}\" [label=\"{}\\n{}\", style={}];\n",
-            escape(&edge.source),
-            escape(&edge.target),
-            escape(edge.relationship.as_str()),
-            escape(edge.confidence.level.as_str()),
-            style
-        ));
-    }
-
-    if graph
-        .metadata
-        .as_ref()
-        .is_some_and(|metadata| metadata.truncated)
-    {
-        out.push_str(
-            "  \"amasario:truncated\" [label=\"the analysis was bounded\\nand did not run \
-             to exhaustion\", shape=note];\n",
-        );
-    }
-
-    out.push_str("}\n");
-    out
+    amasario_export::dot::render(graph)
 }
 
 /// Escapes a string for a DOT double-quoted context.
 ///
-/// DOT has no escape for a newline inside a quoted label, and an unescaped quote or
-/// backslash ends the string early and produces a file Graphviz rejects rather than a
-/// picture with a wrong label.
-fn escape(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for character in value.chars() {
-        match character {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => {},
-            other => out.push(other),
-        }
-    }
-    out
+/// Re-exported from the export crate so that the one implementation is used in both
+/// places, rather than each crate carrying its own escaping that could disagree.
+#[must_use]
+pub fn escape(value: &str) -> String {
+    amasario_export::dot::escape(value)
 }
 
 #[cfg(test)]
@@ -131,6 +79,7 @@ mod tests {
         ObservationBoundary, Relationship,
     };
     use amasario_dependency::{Candidate, EvidenceRef, resolve};
+    use amasario_graph::Graph;
 
     fn document() -> GraphDocument {
         let boundary = ObservationBoundary {
@@ -156,7 +105,7 @@ mod tests {
         .observed_at(boundary.clone())
         .with_outcome(Some(true));
         let set = resolve(subject, Some(boundary), &[candidate], 5).expect("resolves");
-        GraphDocument::of(&amasario_graph::Graph::from_dependencies("g1", &set).expect("a graph"))
+        GraphDocument::of(&Graph::from_dependencies("g1", &set).expect("a graph"))
     }
 
     #[test]
@@ -191,6 +140,18 @@ mod tests {
         assert!(
             dot.contains("amasario:truncated"),
             "a picture is where completeness is most easily assumed"
+        );
+    }
+
+    #[test]
+    fn the_report_and_the_export_produce_the_same_picture() {
+        // One renderer, two callers. If these diverged, a reader comparing a report with
+        // an export would have no way to tell which was wrong.
+        let graph = document();
+        assert_eq!(
+            render_graph(&graph),
+            amasario_export::dot::render(&graph),
+            "the report renderer must be the export renderer"
         );
     }
 

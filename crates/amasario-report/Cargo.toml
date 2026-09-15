@@ -22,6 +22,7 @@ workspace = true
 amasario-core = { workspace = true }
 amasario-dependency = { workspace = true }
 amasario-evidence = { workspace = true }
+amasario-export = { workspace = true }
 amasario-graph = { workspace = true }
 amasario-impact = { workspace = true }
 serde = { workspace = true }
