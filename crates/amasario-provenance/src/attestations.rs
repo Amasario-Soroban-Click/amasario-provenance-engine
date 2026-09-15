@@ -135,6 +135,14 @@ impl FromStr for SignatureState {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Attestation {
+    /// The attestation's identifier.
+    ///
+    /// `schema/attestation.schema.json` requires it because it is "referenced by
+    /// ATTESTATION evidence records and by build and deployment records that cite it".
+    /// Without it a record citing an attestation could not say which one it meant, and
+    /// two attestations with the same issuer and claim would be indistinguishable at the
+    /// point where the difference matters.
+    pub id: String,
     /// Who made the claim.
     pub issuer: String,
     /// What the claim is about.
@@ -169,10 +177,11 @@ impl Attestation {
     ///
     /// # Errors
     ///
-    /// Returns a provenance error when the issuer is empty, and a validation error
-    /// when the signature was verified but no verification method was recorded, or
-    /// when no evidence is cited.
+    /// Returns a validation error when the identifier is empty or longer than the schema's
+    /// 256-character maximum, when the issuer is empty, when the signature was verified but
+    /// no verification method was recorded, or when no evidence is cited.
     pub fn new(
+        id: impl Into<String>,
         issuer: impl Into<String>,
         subject: EntityRef,
         claim: impl Into<String>,
@@ -180,6 +189,20 @@ impl Attestation {
         verification_method: Option<String>,
         evidence: Vec<String>,
     ) -> Result<Self> {
+        let id = id.into();
+        // The bound is the schema's, and it is checked here rather than at serialisation
+        // so that an identifier too long to survive the round trip is refused while the
+        // caller still knows which attestation it was.
+        let id_length = id.chars().count();
+        if id.is_empty() || id_length > 256 {
+            return Err(EngineError::Validation {
+                path: "/attestation/id".to_owned(),
+                detail: format!(
+                    "an attestation identifier must be 1 to 256 characters so that evidence \
+                     citing it can be resolved; got {id_length}"
+                ),
+            });
+        }
         let issuer = issuer.into();
         if issuer.is_empty() {
             return Err(ProvenanceFailure::AttestationUnverified {
@@ -203,6 +226,7 @@ impl Attestation {
             });
         }
         Ok(Self {
+            id,
             issuer,
             subject,
             claim: claim.into(),
@@ -220,6 +244,7 @@ impl Attestation {
     ///
     /// Returns a validation error when no verification method or evidence is given.
     pub fn verified(
+        id: impl Into<String>,
         issuer: impl Into<String>,
         subject: EntityRef,
         claim: impl Into<String>,
@@ -227,6 +252,7 @@ impl Attestation {
         evidence: Vec<String>,
     ) -> Result<Self> {
         Self::new(
+            id,
             issuer,
             subject,
             claim,
@@ -325,10 +351,19 @@ impl Attestation {
     ///
     /// # Errors
     ///
-    /// Returns a provenance error when the issuer is empty, and a validation error
-    /// when the signature was verified without a recorded method or when no evidence
-    /// is cited.
+    /// Returns a validation error when the identifier is empty or over-long, when the
+    /// signature was verified without a recorded method or when no evidence is cited, and
+    /// a provenance error when the issuer is empty. A deserialised attestation has not been
+    /// through [`Self::new`], so these are re-checked rather than assumed.
     pub fn validate(&self) -> Result<()> {
+        if self.id.is_empty() || self.id.chars().count() > 256 {
+            return Err(EngineError::Validation {
+                path: "/attestation/id".to_owned(),
+                detail: "an attestation identifier must be present and at most 256 \
+                         characters, because evidence records cite it"
+                    .to_owned(),
+            });
+        }
         if self.issuer.is_empty() {
             return Err(ProvenanceFailure::AttestationUnverified {
                 issuer: self.issuer.clone(),
@@ -383,6 +418,7 @@ mod tests {
 
     fn verified() -> Attestation {
         Attestation::verified(
+            "att-1",
             "an issuer",
             subject(),
             "this artifact was built from revision 9f2c1e0",
@@ -478,6 +514,7 @@ mod tests {
             SignatureState::Invalid,
         ] {
             let attestation = Attestation::new(
+                "att-1",
                 "an issuer",
                 subject(),
                 "a claim",
@@ -500,6 +537,7 @@ mod tests {
     #[test]
     fn the_refusal_for_an_invalid_signature_says_it_is_refuted() {
         let attestation = Attestation::new(
+            "att-1",
             "an issuer",
             subject(),
             "a claim",
@@ -524,6 +562,7 @@ mod tests {
         // A verification whose method was not recorded cannot be re-examined, which
         // makes it a claim about a check rather than a record of one.
         let error = Attestation::new(
+            "att-1",
             "an issuer",
             subject(),
             "a claim",
@@ -536,8 +575,48 @@ mod tests {
     }
 
     #[test]
+    fn an_attestation_must_carry_an_identifier_evidence_can_cite() {
+        Attestation::new(
+            "",
+            "an issuer",
+            subject(),
+            "a claim",
+            SignatureState::NotPresent,
+            None,
+            vec!["e".to_owned()],
+        )
+        .expect_err("an attestation with no identifier cannot be cited");
+
+        Attestation::new(
+            "x".repeat(257),
+            "an issuer",
+            subject(),
+            "a claim",
+            SignatureState::NotPresent,
+            None,
+            vec!["e".to_owned()],
+        )
+        .expect_err("an identifier longer than the schema allows would not survive the round trip");
+
+        // The bound is inclusive: 256 is the schema's maximum, not one below it.
+        assert!(
+            Attestation::new(
+                "x".repeat(256),
+                "an issuer",
+                subject(),
+                "a claim",
+                SignatureState::NotPresent,
+                None,
+                vec!["e".to_owned()],
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
     fn an_attestation_must_name_an_issuer_and_cite_evidence() {
         Attestation::new(
+            "att-1",
             "",
             subject(),
             "a claim",
@@ -548,6 +627,7 @@ mod tests {
         .expect_err("a claim with no issuer names nobody");
 
         Attestation::new(
+            "att-1",
             "an issuer",
             subject(),
             "a claim",
@@ -562,6 +642,7 @@ mod tests {
     fn the_attestation_records_what_it_was_about_and_in_the_issuers_words() {
         let attestation = verified();
         assert_eq!(attestation.basis(), Basis::Attested);
+        assert_eq!(attestation.id, "att-1");
         assert_eq!(attestation.subject, subject());
         assert!(attestation.claim.contains("built from revision"));
         assert_eq!(attestation.verification_method.as_deref(), Some("sigstore"));
@@ -573,6 +654,7 @@ mod tests {
         let early = verified().issued_at("2026-01-01T00:00:00Z");
         let late = verified().issued_at("2026-06-01T00:00:00Z");
         let unchecked = Attestation::new(
+            "att-2",
             "another issuer",
             subject(),
             "a claim",
