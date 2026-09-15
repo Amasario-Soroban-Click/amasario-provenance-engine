@@ -94,6 +94,7 @@ pub mod classifier;
 pub mod contract;
 pub mod detector;
 pub mod direct;
+pub mod document;
 pub mod errors;
 pub mod resolver;
 pub mod transitive;
@@ -119,6 +120,12 @@ pub use detector::{
 pub use direct::{
     DirectSummary, assert_partition_is_sound, direct_dependencies, direct_targets, is_direct,
     observed_direct, summarise_direct,
+};
+// The published document shapes, kept next to the internal ones so that a caller
+// publishing a set does not have to reach into a separate crate to find them.
+pub use document::{
+    CycleDocument, DependencyDocument, DependencyEdgeDocument, DependencySetDocument, Metadata,
+    dependency_id,
 };
 pub use errors::{DependencyFailure, describe as describe_failure, first_failure};
 pub use resolver::{Cycle, Dependency, DependencySet, Unestablished, resolve, weakest_status};
