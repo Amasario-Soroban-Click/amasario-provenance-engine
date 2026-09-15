@@ -99,7 +99,7 @@ impl FromStr for DeploymentKind {
 
 /// A contract's deployment provenance.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DeploymentProvenance {
     /// The address the executable was placed at.
     pub contract_id: ContractId,

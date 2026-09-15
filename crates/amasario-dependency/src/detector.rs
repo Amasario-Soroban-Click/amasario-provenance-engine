@@ -39,7 +39,7 @@ use crate::classifier::{Candidate, EvidenceRef};
 /// A dependency named by a project's own declaration rather than observed on a
 /// network.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DeclaredDependency {
     /// The package's name.
     pub name: String,

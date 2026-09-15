@@ -146,7 +146,11 @@ impl std::str::FromStr for NetworkType {
 /// different endpoints, retention and operators - a private deployment of Stellar
 /// core using the public testnet passphrase is a `CUSTOM` network by type.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+// `network.schema.json` is camelCase and closes its objects with
+// `additionalProperties: false`, so a snake_case field name is not a cosmetic
+// difference: it makes the document invalid. The explicit `type` rename below still
+// wins over `rename_all`, which is what keeps `network_type` on the wire as `type`.
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Network {
     /// Stable identifier for this descriptor.
     pub id: String,
@@ -228,7 +232,9 @@ impl Network {
 
 /// The point at which observations were made.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+// `provenance.schema.json` defines `observationBoundary` with `observedAt` and
+// `specVersion` in camelCase and `additionalProperties: false`.
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ObservationBoundary {
     /// The network the boundary is expressed against.
     pub network: Network,

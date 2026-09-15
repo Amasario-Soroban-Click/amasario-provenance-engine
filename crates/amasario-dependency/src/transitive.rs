@@ -58,7 +58,7 @@ pub const MAX_PERMITTED_DEPTH: usize = amasario_core::MAX_PERMITTED_DEPTH as usi
 
 /// The bounds a traversal runs under.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Limits {
     /// The greatest number of edges a reported path may traverse.
     pub max_depth: usize,

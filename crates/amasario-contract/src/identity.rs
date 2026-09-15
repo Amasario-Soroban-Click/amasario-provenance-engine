@@ -186,7 +186,7 @@ impl fmt::Display for InstanceModificationKind {
 
 /// The operation that put a contract's instance entry into its present state.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InstanceModification {
     /// The ledger at which the entry was last modified.
     pub ledger: LedgerSequence,
@@ -255,7 +255,7 @@ impl InstanceModification {
 /// See the module documentation for why identity and observation are separated
 /// here rather than being fields of one flat record.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContractIdentity {
     /// The contract's address on its network.
     pub contract_id: ContractId,

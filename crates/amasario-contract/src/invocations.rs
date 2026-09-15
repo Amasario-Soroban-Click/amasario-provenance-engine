@@ -50,7 +50,7 @@ const FN_ERROR_TOPIC: &str = "fn_error";
 
 /// One observed contract call.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContractInvocation {
     /// The contract whose code was entered.
     pub callee: String,
@@ -194,7 +194,7 @@ impl FunctionResolution {
 
 /// A transaction's observed invocations, with the bounds that applied.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InvocationObservations {
     /// The invocations, in the order the evidence recorded them.
     pub invocations: Vec<ContractInvocation>,

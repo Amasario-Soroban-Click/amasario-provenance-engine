@@ -375,7 +375,7 @@ where
 
 /// What produced an artifact.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BuildProvenance {
     /// The source revision the build read.
     pub source_revision: Revision,

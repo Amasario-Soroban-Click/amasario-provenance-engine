@@ -148,7 +148,7 @@ impl InspectionRequest {
 /// ran, and says nothing about who invoked it. The two are kept apart because a
 /// dependency may rest on the first and not on the second.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EmittedEvent {
     /// The endpoint's event identifier.
     pub id: String,

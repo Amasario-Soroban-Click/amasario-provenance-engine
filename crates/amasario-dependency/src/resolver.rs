@@ -37,7 +37,7 @@ use crate::classifier::{Candidate, Classification, EvidenceRef, classify};
 
 /// A dependency the specification allows to be stated.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Dependency {
     /// The entity that depends.
     pub subject: EntityRef,
@@ -200,7 +200,7 @@ impl Cycle {
 
 /// Every dependency established for one subject, partitioned and bounded.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DependencySet {
     /// The entity the set is about.
     pub subject: EntityRef,

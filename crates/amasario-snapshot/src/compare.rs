@@ -369,7 +369,7 @@ fn change_id(category: ChangeCategory, entity: &EntityRef, path: Option<&str>) -
 
 /// Counts by category and change type, with the total.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DiffSummary {
     /// How many differences were reported.
     pub total: usize,

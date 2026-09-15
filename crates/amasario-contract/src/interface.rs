@@ -52,7 +52,7 @@ const EVENT_NAME_PREFIX: &str = "STELLAR";
 
 /// A parameter of an interface function.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InterfaceParam {
     /// The parameter's name as declared.
     pub name: String,
@@ -80,7 +80,7 @@ pub struct InterfaceFunction {
 
 /// A field of a declared struct.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InterfaceField {
     /// The field's name.
     pub name: String,
@@ -103,7 +103,7 @@ pub struct InterfaceStruct {
 
 /// One case of a declared union.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InterfaceUnionCase {
     /// The case's name.
     pub name: String,
@@ -151,7 +151,7 @@ pub struct InterfaceEnum {
 
 /// A parameter of a declared event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InterfaceEventParam {
     /// The parameter's name.
     pub name: String,
@@ -163,7 +163,7 @@ pub struct InterfaceEventParam {
 
 /// A declared event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InterfaceEvent {
     /// The event's name, without the SDK's prefix.
     pub name: String,
@@ -186,7 +186,7 @@ pub struct InterfaceEvent {
 /// letting it leak into the digest would make two identical interfaces compare
 /// unequal when their builders emitted entries differently.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ContractInterface {
     /// The exported functions.
     pub functions: Vec<InterfaceFunction>,

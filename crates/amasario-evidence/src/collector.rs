@@ -182,7 +182,7 @@ impl std::fmt::Display for EvidenceClass {
 /// carries all of them and [`Self::failures`] checks the ones its class requires, which is
 /// what lets one type serve nine classes without nine near-identical types.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvidenceRecord {
     /// The record's identifier, unique within the collected set.
     pub id: String,

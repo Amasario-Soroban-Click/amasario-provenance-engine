@@ -47,7 +47,7 @@ pub struct LinkAssessment {
 
 /// The result of verifying a chain.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VerificationOutcome {
     /// The combined status.
     pub status: VerificationStatus,

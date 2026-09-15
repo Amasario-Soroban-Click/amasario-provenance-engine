@@ -192,7 +192,7 @@ impl fmt::Display for SectionKind {
 /// hold, which is what makes this usable for a diagnostic rather than only for a
 /// summary. They are byte offsets from the start of the module.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WasmSection {
     /// Which section this is.
     pub kind: SectionKind,
@@ -259,7 +259,7 @@ pub struct WasmExport {
 
 /// A deployed module, as observed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WasmModule {
     /// The SHA-256 digest of the module's bytes as retrieved.
     ///

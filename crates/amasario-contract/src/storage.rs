@@ -78,7 +78,7 @@ impl Durability {
 
 /// A contract data entry that was found.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StorageEntry {
     /// The key, rendered in a readable form.
     ///
@@ -103,7 +103,7 @@ pub struct StorageEntry {
 
 /// The result of looking up a set of storage keys.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StorageObservation {
     /// The keys that were asked about.
     pub requested_keys: Vec<String>,

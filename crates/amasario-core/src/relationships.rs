@@ -503,7 +503,11 @@ impl FromStr for ConfidenceLevel {
 /// shape of claim the specification exists to prevent: it asserts a degree of
 /// support without naming what supports it, and a reader cannot disagree with it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+// `confidence.schema.json` names the counter-evidence field `contradictingEvidence`
+// and sets `additionalProperties: false`, so the snake_case spelling made every
+// confidence that recorded a contradiction invalid against the schema the engine
+// claims to implement.
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Confidence {
     /// How strongly the evidence supports the claim.
     pub level: ConfidenceLevel,

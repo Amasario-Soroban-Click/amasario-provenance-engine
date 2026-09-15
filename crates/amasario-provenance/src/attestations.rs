@@ -133,7 +133,7 @@ impl FromStr for SignatureState {
 
 /// A third-party claim about a subject.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Attestation {
     /// The attestation's identifier.
     ///
