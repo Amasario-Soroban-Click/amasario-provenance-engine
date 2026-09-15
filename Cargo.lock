@@ -59,6 +59,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "amasario-evidence"
+version = "1.0.0"
+dependencies = [
+ "amasario-core",
+ "amasario-dependency",
+ "amasario-provenance",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "amasario-graph"
 version = "1.0.0"
 dependencies = [

@@ -5,6 +5,7 @@ members = [
   "crates/amasario-network",
   "crates/amasario-contract",
   "crates/amasario-dependency",
+  "crates/amasario-evidence",
   "crates/amasario-graph",
   "crates/amasario-impact",
   "crates/amasario-provenance",
