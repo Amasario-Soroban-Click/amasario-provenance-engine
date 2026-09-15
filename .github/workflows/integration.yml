@@ -49,15 +49,22 @@ jobs:
         env:
           AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
         run: |
-          # Only the suites that exist are run, and the list is printed, so a suite
-          # that has been renamed rather than removed is visible rather than silently
-          # skipped.
+          # An absent directory is reported rather than passed silently, and an empty
+          # one fails: the difference matters, because the first is a surface that has
+          # not been built yet and the second is a surface that has been emptied. A
+          # check that cannot tell them apart is one that stops noticing.
           set -euo pipefail
           if [ ! -d integration-tests ]; then
-            echo "integration-tests/ does not exist; nothing to run."
+            echo "::notice title=No integration tests::integration-tests/ does not exist yet; \
+          nothing to run. This is reported rather than passed silently."
+            exit 0
+          fi
+          if [ -z "$(find integration-tests -type f -print -quit)" ]; then
+            echo "integration-tests/ exists but holds no files, which is a defect rather than \
+          an unbuilt surface." >&2
             exit 1
           fi
-          ls -1 integration-tests
+          find integration-tests -type f -print
           cargo test --workspace --all-features --test '*' -- --include-ignored
 
       - name: The CLI runs against the recorded fixtures
