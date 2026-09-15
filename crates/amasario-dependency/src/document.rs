@@ -401,7 +401,7 @@ pub struct UnresolvedDocument {
 /// `dependency-set.schema.json`'s reason enumeration.
 ///
 /// Six of the seven are transport-shaped and are reached through
-/// [`UnresolvedReason::of_category`]; the seventh, [`Self::NotPermitted`], is the only
+/// [`UnresolvedReason::of_error`]; the seventh, [`Self::NotPermitted`], is the only
 /// one a rule refusal can produce.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

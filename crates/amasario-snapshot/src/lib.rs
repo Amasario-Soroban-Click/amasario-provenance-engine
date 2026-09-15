@@ -16,8 +16,8 @@
 //!   boundary, so re-capturing a state yields the same identifier rather than a new one.
 //! * [`store`] writes and reads the whole document, validating on read rather than trusting
 //!   a file that this engine may not have produced.
-//! * [`compare`] produces the difference, in canonical mode, with a category, a change type
-//!   and a reason on every entry.
+//! * [`compare()`] produces the difference, in canonical mode, with a category, a change
+//!   type and a reason on every entry.
 //!
 //! # The two questions a snapshot answers
 //!
@@ -25,7 +25,7 @@
 //! state and not over the capture - so a re-run on an unchanged contract produces an equal
 //! digest and an empty diff, which is the case that would otherwise alert on every schedule.
 //!
-//! "What changed?" is answered by [`compare`], and the answer is deliberately composed of
+//! "What changed?" is answered by [`compare()`], and the answer is deliberately composed of
 //! facts rather than of a score: each entry names the entity, the category, whether the
 //! change has an established ordering, the values on either side, and why the difference is
 //! a difference. `rules/impact/change-impact` gives the reason the reason is mandatory: a

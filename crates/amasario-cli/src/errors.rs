@@ -3,7 +3,7 @@
 //! # Why the CLI has its own error type
 //!
 //! Every failure the engine produces is already classified by
-//! [`ErrorCategory`](amasario_core::ErrorCategory), and the CLI must not collapse that
+//! [`ErrorCategory`], and the CLI must not collapse that
 //! classification back into one exit code. A CI job that runs `amasario verify` needs to
 //! tell "the contract could not be reached" from "the contract was reached and its
 //! provenance did not hold", because one is retried and the other fails a release. The

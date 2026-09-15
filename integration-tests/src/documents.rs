@@ -11,10 +11,9 @@
 //! have, which is worse than no fixture at all.
 //!
 //! So each builder below drives the real code path - candidates through
-//! [`resolve`](amasario_dependency::resolve), a set through
-//! [`close_set`](amasario_dependency::close_set), a set through
-//! [`Graph::from_dependencies`], findings through
-//! [`analyze`](amasario_impact::analyze) - and the fixture is whatever that produced.
+//! [`resolve`], a set through [`close_set`], a set through
+//! [`Graph::from_dependencies`], findings through [`analyze`] - and the fixture is
+//! whatever that produced.
 //! The corpus is consequently a statement about the engine rather than about the
 //! corpus.
 //!
@@ -424,8 +423,8 @@ pub fn observed_edges() -> Vec<amasario_dependency::Dependency> {
 
 /// The edge that closes the corpus's chain back on itself.
 ///
-/// Separate from [`observed_edges`] because only the `cyclic` graph holds it. See
-/// [`CLOSING_CALLS`] for why the ordinary chain must not.
+/// Separate from [`observed_edges`] because only the `cyclic` graph holds it. See the
+/// `CLOSING_CALLS` constant for why the ordinary chain must not.
 ///
 /// # Panics
 ///
