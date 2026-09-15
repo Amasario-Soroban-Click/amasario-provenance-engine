@@ -49,10 +49,18 @@
 //! unsupported one, and [`verify_chain`] reports the stages the chain has no link for
 //! rather than presenting a bounded search as a complete provenance.
 //!
+//! **An attestation is evidence, not proof.** [`Attestation::as_confidence`] caps an
+//! attestation at [`ATTESTATION_CONFIDENCE_CEILING`] and refuses to cite one whose
+//! signature was not verified, because an unverified assertion is precisely the thing
+//! an attestation is supposed to make checkable.
+//!
 //! # What this crate does not claim
 //!
-//! Amasario is not a security scanner. Nothing here is a safety verdict about a
-//! contract, its source or its builder.
+//! Amasario is not a security scanner, and none of this is a safety verdict. A
+//! `VERIFIED` outcome says one thing only: the recorded evidence supports the record's
+//! claim and the engine could check it. It says nothing about whether the source is
+//! trustworthy, whether the contract is safe, or whether the builder was honest - a
+//! verified chain from a hostile source is still a verified chain.
 //!
 //! # Example
 //!
@@ -105,6 +113,7 @@
 #![deny(unsafe_code)]
 
 pub mod artifact;
+pub mod attestations;
 pub mod build;
 pub mod deployment;
 pub mod errors;
@@ -118,6 +127,7 @@ pub mod verification;
 // be friction with no benefit. The constants travel with them so that a caller can
 // name a redaction rather than restate a string.
 pub use artifact::{ArtifactIdentity, ArtifactType, DerivationSource, compare_digests};
+pub use attestations::{ATTESTATION_CONFIDENCE_CEILING, Attestation, SignatureState, best_citable};
 pub use build::{
     BuildProvenance, EnvironmentVariable, REDACTED, Reproducibility, ReproducibilityStatus,
     Toolchain, is_secret_name, sanitise_environment,
@@ -147,8 +157,13 @@ mod tests {
         assert_eq!(ArtifactType::Wasm.as_str(), "WASM");
         assert_eq!(ReproducibilityStatus::Reproduced.as_str(), "REPRODUCED");
         assert_eq!(DeploymentKind::Deploy.as_str(), "DEPLOY");
+        assert_eq!(
+            SignatureState::PresentUnverified.as_str(),
+            "PRESENT_UNVERIFIED"
+        );
         assert_eq!(ChainLinkKind::SourceToBuild.as_str(), "SOURCE_TO_BUILD");
         assert_eq!(MatchOutcome::Match.as_str(), "MATCH");
+        assert_eq!(ATTESTATION_CONFIDENCE_CEILING.as_str(), "HIGH_CONFIDENCE");
         assert_eq!(REDACTED, "<redacted>");
     }
 
