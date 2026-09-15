@@ -2,9 +2,9 @@
 //!
 //! # Why the traversal is bounded and says so
 //!
-//! `rules/transitive-impact.yaml` ends with the non-goal that shapes this module: "This
-//! rule does not claim that every reachable entity is affected, only those the bounded
-//! traversal found." A cycle, a deep chain and a dense fan-out all make an exhaustive
+//! `rules/impact/transitive-impact.yaml` ends with the non-goal that shapes this module:
+//! "This rule does not claim that every reachable entity is affected, only those the
+//! bounded traversal found." A cycle, a deep chain and a dense fan-out all make an exhaustive
 //! answer expensive, and - more to the point - an exhaustive answer is not what an
 //! operator needs before an upgrade. What they need is a route to each entity they might
 //! care about, and a statement of whether the search ran out of entities or out of

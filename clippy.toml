@@ -24,7 +24,9 @@ disallowed-methods = [
 
 # Deterministic ordering matters more than allocation count here, so the
 # `HashMap` lints are disabled in favour of an explicit rule: the engine uses
-# `BTreeMap`/`BTreeSet` for anything that reaches output. See `docs/architecture.md`.
+# `BTreeMap`/`BTreeSet` for anything that reaches output. This is the "canonical
+# ordering" property the specification requires of every implementation; see
+# the Determinism section of `docs/architecture.md` in `amasario-provenance-spec`.
 disallowed-types = [
   { path = "std::collections::HashMap", reason = "iteration order must be deterministic; use BTreeMap for anything that reaches output" },
   { path = "std::collections::HashSet", reason = "iteration order must be deterministic; use BTreeSet for anything that reaches output" },

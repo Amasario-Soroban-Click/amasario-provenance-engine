@@ -6,11 +6,11 @@
 //! the engine produces cites a network that will have moved on by the time anyone reads
 //! it; a snapshot records what was seen, at which boundary, on which chain, with which
 //! evidence, so that a later comparison compares two recorded states rather than two
-//! recollections. `docs/snapshots.md` in the specification states what that requires of the
-//! model: it must be able to contain the contract identity, the executable identity, the
-//! provenance record, the dependency graph, the evidence, the confidence, the impact
-//! information, the observation boundary, the network, the ledger boundary, the
-//! specification version and the engine version.
+//! recollections. `schema/snapshot.schema.json` in the specification is what constrains
+//! that model: a snapshot must be able to carry the contract identity, the executable
+//! identity (`wasm`), the provenance record, the dependency graph, the evidence, the
+//! confidence, the impact information, the observation boundary, the network, the ledger
+//! boundary, the specification version and the engine version (`engineVersion`).
 //!
 //! Each of those is a field below, and the ones the schema requires are not optional here.
 //! `evidence` and `confidence` are required because a snapshot with no evidence "can
