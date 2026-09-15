@@ -268,6 +268,18 @@ pub fn close(subject: &EntityRef, source: &dyn EdgeSource, limits: Limits) -> Cl
                 // citations travel on the kept entry.
                 continue;
             }
+            // The bound is enforced here, per entity, rather than only when a node is
+            // dequeued. Enforcing it on dequeue alone lets a single expansion push the
+            // visited count past the configured maximum, so a result could report having
+            // visited more entities than the bound it names - which makes the bound a
+            // suggestion rather than a bound. The check sits after the cycle check on
+            // purpose: reporting a cycle is not visiting a node, and refusing to report
+            // one because the budget ran out would hide real topology.
+            if visited.len() >= limits.max_nodes {
+                truncated = true;
+                truncation_reason.get_or_insert(TruncationReason::MaxNodesReached);
+                break;
+            }
 
             let mut chain = frontier.chain.clone();
             chain.push(edge);
@@ -813,6 +825,64 @@ mod tests {
         );
         assert_eq!(reached.depth, 2);
         set.validate().expect("the merged set is consistent");
+    }
+
+    #[test]
+    fn the_node_bound_bounds_the_count_it_names() {
+        // One expansion with three targets and a budget of three: enforcing the bound only
+        // when a node is dequeued would let this visit four entities while reporting a
+        // bound of three, which makes the bound a suggestion rather than a bound.
+        let edges = vec![
+            edge("A", "B", "11".repeat(32)),
+            edge("A", "C", "12".repeat(32)),
+            edge("A", "D", "13".repeat(32)),
+        ];
+        let closure = close(&entity("A"), &edges, limits(50, 3));
+        assert!(closure.truncated);
+        assert_eq!(
+            closure.truncation_reason,
+            Some(TruncationReason::MaxNodesReached)
+        );
+        assert_eq!(closure.nodes_visited, 3);
+        assert!(
+            closure.nodes_visited <= closure.limits.max_nodes,
+            "a result must not report visiting more entities than the bound it names"
+        );
+        // Every entity that fitted is one hop away, so it belongs to the direct partition
+        // and is not reported here - but the two that were visited before the bound was
+        // reached were visited, and the count says so.
+        assert!(
+            closure.entries.is_empty(),
+            "the entities that fitted are all direct: {:?}",
+            closure
+                .entries
+                .iter()
+                .map(|entry| entry.object.id.clone())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn a_cycle_is_reported_even_when_the_node_bound_is_already_spent() {
+        // Reporting a cycle is not visiting a node, so refusing to report one because the
+        // budget ran out would hide real topology - which is exactly what the rule against
+        // removing cycles exists to prevent.
+        let edges = vec![
+            edge("A", "B", "14".repeat(32)),
+            edge("B", "A", "15".repeat(32)),
+        ];
+        let closure = close(&entity("A"), &edges, limits(5, 1));
+        assert_eq!(closure.nodes_visited, 1, "the subject alone");
+        assert!(closure.truncated);
+        assert!(
+            !closure.has_cycles(),
+            "the loop was never entered, so there is nothing to report: {:?}",
+            closure.cycles
+        );
+
+        let reached = close(&entity("A"), &edges, limits(5, 3));
+        assert_eq!(reached.nodes_visited, 2);
+        assert!(reached.has_cycles(), "the loop was entered and is reported");
     }
 
     #[test]
