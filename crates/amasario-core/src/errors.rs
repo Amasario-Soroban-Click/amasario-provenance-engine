@@ -171,6 +171,17 @@ pub enum EngineError {
         detail: String,
     },
 
+    /// A contract was found but could not be interpreted: its executable is of an
+    /// unrecognised kind, its module is not a WebAssembly module, or its declared
+    /// interface is unreadable.
+    ///
+    /// Distinct from [`EngineError::ContractNotFound`], which is the network's
+    /// definite answer that nothing is deployed at the address. Collapsing the two
+    /// would let a contract that exists and cannot be read be reported as one that
+    /// does not exist.
+    #[error("contract could not be interpreted: {0}")]
+    Contract(String),
+
     /// The requested contract does not exist at the stated boundary.
     ///
     /// This is an outcome, not a failure of the engine, and it is deliberately
@@ -250,7 +261,7 @@ impl EngineError {
         match self {
             Self::Configuration(_) => ErrorCategory::Configuration,
             Self::Network { .. } | Self::MalformedResponse { .. } => ErrorCategory::Network,
-            Self::ContractNotFound { .. } => ErrorCategory::Contract,
+            Self::ContractNotFound { .. } | Self::Contract(_) => ErrorCategory::Contract,
             Self::Validation { .. } => ErrorCategory::Validation,
             Self::SpecificationCompatibility { .. } => ErrorCategory::SpecificationCompatibility,
             Self::Dependency(_) => ErrorCategory::Dependency,
@@ -306,6 +317,7 @@ impl EngineError {
                 "network": network,
                 "ledger": ledger,
             })),
+            Self::Contract(_) => None,
             Self::Validation { path, .. } => Some(serde_json::json!({ "pointer": path })),
             Self::SpecificationCompatibility {
                 found, supported, ..
@@ -334,6 +346,7 @@ impl EngineError {
             } => "PERMANENT",
             Self::MalformedResponse { .. } => "MALFORMED_RESPONSE",
             Self::ContractNotFound { .. } => "NOT_FOUND",
+            Self::Contract(_) => "UNINTERPRETABLE",
             Self::Validation { .. } => "SCHEMA_VIOLATION",
             Self::SpecificationCompatibility { .. } => "VERSION_MISMATCH",
             Self::Dependency(_) => "UNESTABLISHED",

@@ -121,7 +121,8 @@ pub use identity::{
     ContractId, Digest, DigestAlgorithm, EntityKind, EntityRef, LedgerSequence, TransactionHash,
 };
 pub use observations::{
-    Network, NetworkType, Observation, ObservationBoundary, TraversalOutcome, TruncationReason,
+    Network, NetworkType, Observation, ObservationBoundary, ObservationProvenance,
+    TraversalOutcome, TruncationReason,
 };
 pub use pipeline::{Pipeline, PipelineReport, Stage, StageOutcome};
 pub use relationships::{
