@@ -417,8 +417,15 @@ fn transitive_dependency(
 /// Returns a dependency error when the merged set violates an invariant.
 pub fn apply(set: &mut DependencySet, closure: Closure) -> Result<()> {
     for entry in closure.entries {
+        // The subject is compared as well, because "the object is already in the direct
+        // partition" is not the same statement as "the subject already reaches it
+        // directly". Observations are resolved together, so a set can hold an edge whose
+        // subject is an intermediate - and reading that as the subject's own direct edge
+        // would drop a reachability claim the traversal actually established.
         let already_direct = set.direct.iter().any(|direct| {
-            direct.object == entry.object && direct.relationship == entry.relationship
+            direct.subject == entry.subject
+                && direct.object == entry.object
+                && direct.relationship == entry.relationship
         });
         if !already_direct {
             set.transitive.push(entry);
@@ -744,6 +751,67 @@ mod tests {
         assert_eq!(set.direct.len(), 1);
         assert_eq!(set.transitive.len(), 1);
         assert_eq!(set.transitive[0].object.id, "C");
+        set.validate().expect("the merged set is consistent");
+    }
+
+    #[test]
+    fn a_reachability_claim_is_kept_when_only_an_intermediate_reaches_the_object() {
+        // `B -> C` is in the direct partition, and `A` reaches `C` through `B`. Comparing
+        // the object alone would read the second as already covered by the first and drop
+        // the claim the traversal actually established.
+        let mut set = crate::resolver::resolve(
+            entity("A"),
+            Some(boundary()),
+            &[
+                Candidate::new(
+                    entity("A"),
+                    entity("B"),
+                    Relationship::Invocates,
+                    Basis::ObservedInvocation,
+                    vec![
+                        EvidenceRef::new(EvidenceType::Transaction, "16".repeat(32))
+                            .expect("a citation"),
+                    ],
+                )
+                .expect("a candidate")
+                .observed_at(boundary())
+                .with_outcome(Some(true)),
+                Candidate::new(
+                    entity("B"),
+                    entity("C"),
+                    Relationship::Invocates,
+                    Basis::ObservedInvocation,
+                    vec![
+                        EvidenceRef::new(EvidenceType::Transaction, "17".repeat(32))
+                            .expect("a citation"),
+                    ],
+                )
+                .expect("a candidate")
+                .observed_at(boundary())
+                .with_outcome(Some(true)),
+            ],
+            5,
+        )
+        .expect("resolves");
+        assert_eq!(set.direct.len(), 2, "two edges, two subjects");
+
+        let edges = set.direct.clone();
+        close_set(&mut set, &edges, limits(5, 50)).expect("closes");
+        let reached = set
+            .transitive
+            .iter()
+            .find(|dependency| dependency.object.id == "C")
+            .expect("A reaches C through B, and the claim must survive");
+        assert_eq!(reached.subject.id, "A");
+        assert_eq!(
+            reached
+                .path
+                .iter()
+                .map(|e| e.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["B"]
+        );
+        assert_eq!(reached.depth, 2);
         set.validate().expect("the merged set is consistent");
     }
 

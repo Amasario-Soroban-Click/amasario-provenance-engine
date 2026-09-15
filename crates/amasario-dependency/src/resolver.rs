@@ -137,8 +137,18 @@ impl Dependency {
     }
 
     /// The key two observations of one edge share.
-    const fn edge_key(&self) -> (EntityKindKey, &str, &'static str) {
+    ///
+    /// Includes the **subject**, which is what makes this an identity rather than a
+    /// partial match. Two observations of one edge share their subject, their relationship
+    /// and their object; an edge is directed, so sharing only the last two describes two
+    /// different edges - `A -> C` and `B -> C` - and treating those as one would silently
+    /// discard a real relationship. Observations are collected per contract but resolved
+    /// together, so a set routinely holds edges whose subjects differ, and a key that
+    /// ignored the subject would merge them.
+    const fn edge_key(&self) -> EdgeKey<'_> {
         (
+            EntityKindKey(self.subject.kind),
+            self.subject.id.as_str(),
             EntityKindKey(self.object.kind),
             self.object.id.as_str(),
             self.relationship.as_str(),
@@ -271,7 +281,10 @@ impl DependencySet {
             ));
         }
 
-        let mut seen: Vec<((EntityKindKey, String, &'static str), &'static str)> = Vec::new();
+        let mut seen: Vec<(
+            (&'static str, String, &'static str, String, &'static str),
+            &'static str,
+        )> = Vec::new();
         for dependency in self.all() {
             if dependency.evidence.is_empty() {
                 return Err(violation(
@@ -337,20 +350,30 @@ impl DependencySet {
             } else {
                 "transitive"
             };
+            // The subject is part of the key, for the reason [`Dependency::edge_key`] gives:
+            // a pair of endpoints and a relationship without the source does not identify an
+            // edge, and a set holding edges from several subjects would otherwise report a
+            // false collision between two unrelated ones.
             let key = (
-                EntityKindKey(dependency.object.kind),
+                dependency.subject.kind.as_str(),
+                dependency.subject.id.clone(),
+                dependency.object.kind.as_str(),
                 dependency.object.id.clone(),
                 dependency.relationship.as_str(),
             );
             if let Some((_, previous)) = seen.iter().find(|(existing, _)| {
-                existing.0 == key.0 && existing.1 == key.1 && existing.2 == key.2
+                existing.0 == key.0
+                    && existing.1 == key.1
+                    && existing.2 == key.2
+                    && existing.3 == key.3
+                    && existing.4 == key.4
             }) {
                 return Err(violation(
                     "/dependencySet",
                     &format!(
-                        "the edge to {} appears in both the {previous} and the {partition} \
+                        "the edge {} -> {} appears in both the {previous} and the {partition} \
                          partition; an edge belongs to exactly one of them",
-                        dependency.object.id
+                        dependency.subject.id, dependency.object.id
                     ),
                 ));
             }
@@ -364,6 +387,12 @@ impl DependencySet {
 fn violation(path: &str, detail: &str) -> amasario_core::EngineError {
     amasario_core::EngineError::Dependency(format!("{path}: {detail}"))
 }
+
+/// The identity of an edge: its subject, its object and the relationship between them.
+///
+/// A type alias rather than a struct so that ordering and equality are the tuple's, and so
+/// that a reader can see at a glance which fields make two observations the same edge.
+type EdgeKey<'a> = (EntityKindKey, &'a str, EntityKindKey, &'a str, &'static str);
 
 /// A wrapper that orders entity kinds by their wire name, so that a map of edges has
 /// a deterministic order without depending on the enumeration's declaration order.
@@ -535,6 +564,21 @@ mod tests {
         }
     }
 
+    /// A cross-contract call from a named subject, for the cases where the subject is
+    /// what the test is about.
+    fn call(subject: &str, callee: &str, transaction: &str) -> Candidate {
+        Candidate::new(
+            entity(EntityKind::Contract, subject),
+            entity(EntityKind::Contract, callee),
+            Relationship::Invocates,
+            Basis::ObservedInvocation,
+            vec![EvidenceRef::new(EvidenceType::Transaction, transaction).expect("a citation")],
+        )
+        .expect("a candidate")
+        .observed_at(boundary())
+        .with_outcome(Some(true))
+    }
+
     fn invocation(callee: &str, transaction: &str) -> Candidate {
         Candidate::new(
             entity(EntityKind::Contract, "C-subject"),
@@ -664,6 +708,63 @@ mod tests {
         assert_eq!(merged.basis, Basis::ResolvedLockfile);
         assert_eq!(merged.confidence.level, ConfidenceLevel::MediumConfidence);
         assert_eq!(merged.evidence.len(), 2);
+    }
+
+    #[test]
+    fn two_edges_sharing_an_object_are_two_edges() {
+        // `C-a -> C-c` and `C-b -> C-c` share their object and their relationship and are
+        // two different edges. An edge is directed, so a key that omitted the subject would
+        // collapse them and silently discard whichever arrived second - and observations
+        // are collected per contract but resolved together, so this is the ordinary case
+        // rather than a contrived one.
+        let set = resolve(
+            entity(EntityKind::Contract, "C-a"),
+            Some(boundary()),
+            &[
+                call("C-a", "C-c", &"a".repeat(64)),
+                call("C-b", "C-c", &"b".repeat(64)),
+            ],
+            5,
+        )
+        .expect("resolves");
+        assert_eq!(
+            set.direct.len(),
+            2,
+            "both edges survive: {:?}",
+            set.direct
+                .iter()
+                .map(|dependency| format!("{} -> {}", dependency.subject.id, dependency.object.id))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(set.direct[0].subject.id, "C-a");
+        assert_eq!(set.direct[1].subject.id, "C-b");
+        assert_eq!(set.direct[0].object.id, "C-c");
+        assert_eq!(set.direct[1].object.id, "C-c");
+        set.validate()
+            .expect("two edges with different subjects do not collide");
+    }
+
+    #[test]
+    fn two_observations_of_one_directed_edge_still_merge() {
+        // The complement of the test above: widening the key must not stop two readings of
+        // the same edge from being merged, or a repeated observation would be reported
+        // twice.
+        let set = resolve(
+            entity(EntityKind::Contract, "C-a"),
+            Some(boundary()),
+            &[
+                call("C-a", "C-c", &"a".repeat(64)),
+                call("C-a", "C-c", &"b".repeat(64)),
+            ],
+            5,
+        )
+        .expect("resolves");
+        assert_eq!(set.direct.len(), 1, "one edge, however many observations");
+        assert_eq!(
+            set.direct[0].transactions().len(),
+            2,
+            "both citations survive"
+        );
     }
 
     #[test]
