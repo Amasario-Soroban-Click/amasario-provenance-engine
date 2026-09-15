@@ -93,11 +93,18 @@ pub async fn run(args: ReportArgs) -> CliResult<()> {
         ),
         (Some(_), Some(true)) => (
             amasario_core::VerificationStatus::Verified,
-            "the retrieved module's bytes hash to the digest the network records".to_owned(),
+            "the module bytes the endpoint served hash to the executable digest the same \
+             endpoint records; both readings come from the endpoint, so this establishes \
+             that the response is internally consistent, not that any other party \
+             corroborates it"
+                .to_owned(),
         ),
         (Some(_), Some(false)) => (
             amasario_core::VerificationStatus::Conflicting,
-            "the retrieved module's bytes do not hash to the digest the network records".to_owned(),
+            "the module bytes the endpoint served do not hash to the executable digest the \
+             same endpoint records; the endpoint's own two readings disagree, which is a \
+             contradiction rather than a weak verification"
+                .to_owned(),
         ),
         (Some(_), None) => (
             amasario_core::VerificationStatus::Unverified,

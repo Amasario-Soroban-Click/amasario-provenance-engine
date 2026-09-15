@@ -27,6 +27,41 @@ the evidence is. They move independently:
 Collapsing the two would make `CONFLICTING` read as "less verified than verified", which
 is exactly backwards. A contradiction is not a weak verification; it is a refutation.
 
+## What `amasario verify` establishes, exactly
+
+`VERIFIED` is a strong word, and for the executable identity it is stronger than what the
+command actually checks. `verify` retrieves the module's bytes from the endpoint and
+hashes them, then compares that hash to the executable digest the *same endpoint* reports
+for the contract. Both readings come from one source.
+
+That is worth having. An endpoint that serves bytes which do not hash to the digest it
+reports is contradicting itself, and that is a real finding — it is what the `CONFLICTING`
+status is for. But internal consistency is not independent corroboration, and the two are
+one word apart in a CI log.
+
+So the comparison and its limits travel with the status in every rendering. The JSON
+carries a `scope` member:
+
+```json
+{
+  "status": "VERIFIED",
+  "scope": {
+    "checked": [
+      "the module bytes the endpoint served, against the executable digest the same endpoint reports for the contract"
+    ],
+    "notChecked": [
+      "that the recorded executable digest corresponds to any source revision or build, which is the provenance analysis rather than this command",
+      "that any party other than the endpoint corroborates the recorded digest",
+      "that the contract is secure, safe, correct or free of vulnerabilities"
+    ]
+  }
+}
+```
+
+The text rendering prints the same two lists, and the `reason` string names both sides as
+coming from the endpoint. A pipeline that branches on a bare `"status": "VERIFIED"`
+without reading `scope` is reading a narrower claim than the word suggests.
+
 ## `CONFLICTING` is the status that matters
 
 The specification introduces `CONFLICTING` for one reason: a claimed source revision that
@@ -37,8 +72,8 @@ The engine's cases:
 
 | Situation | Status |
 | --- | --- |
-| The retrieved module's bytes hash to the digest the network records. | `VERIFIED` |
-| The retrieved module's bytes do not hash to the recorded digest. | `CONFLICTING` |
+| The module bytes the endpoint served hash to the executable digest the same endpoint records. | `VERIFIED` |
+| The module's bytes do not hash to the digest the endpoint records. | `CONFLICTING` |
 | The digest was recorded but the module was never retrieved. | `UNVERIFIED` |
 | A claimed digest disagrees with the recorded one, even though the module verified. | `CONFLICTING` |
 | The contract executes no module at all. | `UNKNOWN` |
@@ -101,7 +136,7 @@ in the documentation — see [security.md](security.md) and
 | Layer | What it verifies |
 | --- | --- |
 | `amasario-network` | That the endpoint serves the chain the caller named, by passphrase. |
-| `amasario-contract` | That the retrieved module's bytes hash to the digest the network records. |
+| `amasario-contract` | That the module bytes the endpoint served hash to the digest the same endpoint records — a consistency check within one source. |
 | `amasario-provenance` | Each chain link, against the evidence cited for it. |
 | `amasario-evidence` | That a record satisfies its own class before it supports a claim. |
 | `amasario-dependency` | That a candidate's basis can establish the claim it makes. |

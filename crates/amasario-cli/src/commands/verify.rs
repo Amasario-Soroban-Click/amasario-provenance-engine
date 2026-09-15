@@ -104,13 +104,13 @@ pub async fn run(
             "the contract executes no module, so there is no executable identity to verify"
                 .to_owned(),
         ),
-        (Some(_), Some(true)) => (
-            VerificationStatus::Verified,
-            "the retrieved module's bytes hash to the digest the network records".to_owned(),
-        ),
+        (Some(_), Some(true)) => (VerificationStatus::Verified, VERIFIED_REASON.to_owned()),
         (Some(_), Some(false)) => (
             VerificationStatus::Conflicting,
-            "the retrieved module's bytes do not hash to the digest the network records".to_owned(),
+            "the module bytes the endpoint served do not hash to the executable digest the \
+             same endpoint records; the endpoint's own two readings disagree, which is a \
+             contradiction rather than a weak verification"
+                .to_owned(),
         ),
         (Some(_), None) => (
             VerificationStatus::Unverified,
@@ -213,6 +213,11 @@ fn view(
         "moduleDigestVerified": inspection.digest_verified,
         "claimedDigest": verify.claimed_digest,
         "required": verify.require.map(|required| required.status().as_str().to_owned()),
+        // What the status is a statement about. Emitted as part of the document rather
+        // than left to the documentation, because a gate reads this field and not the
+        // prose: a pipeline that branched on a bare `VERIFIED` would be reading a claim
+        // narrower than the word suggests, and the narrowing belongs where it is read.
+        "scope": scope(),
         "boundary": to_value(&inspection.boundary)?,
         "anomalies": inspection
             .anomalies
@@ -220,6 +225,51 @@ fn view(
             .map(|failure| amasario_contract::describe(failure).to_owned())
             .collect::<Vec<String>>(),
     }))
+}
+
+/// The reason reported with a `VERIFIED` executable identity.
+///
+/// # Why the sentence is this specific
+///
+/// The comparison is between two readings of one source: the module bytes the endpoint
+/// served, and the executable digest the same endpoint reports. It is a real check - an
+/// endpoint that contradicts itself is a finding - but `VERIFIED` is a strong word for
+/// it, and a reader who takes it for an independent attestation has been misled by one
+/// word rather than by a wrong answer. So the reason names both sides as coming from the
+/// endpoint and says what that does and does not establish, and the test below pins it
+/// because the wording is the whole of the qualification.
+const VERIFIED_REASON: &str = "the module bytes the endpoint served hash to the executable digest the same endpoint \
+     records; both readings come from the endpoint, so this establishes that the response \
+     is internally consistent, not that any other party corroborates it";
+
+/// What `verify` checked, and what it did not.
+///
+/// # Why the boundary is spelled out
+///
+/// The strongest thing this command can establish is a consistency check within one
+/// source: the module bytes the endpoint served against the executable digest the same
+/// endpoint reports. That is worth having - an endpoint contradicting itself is a real
+/// finding, and a `CONFLICTING` result is a refutation - but `VERIFIED` is a strong word
+/// for it, and a reader who takes it for an independent attestation has been misled by a
+/// single word rather than by a wrong answer.
+///
+/// So the two lists travel with the status in every rendering: the readings that were
+/// compared, and the questions this command does not ask. A consumer that needs one of
+/// the unchecked properties has to obtain it from somewhere else, and the document says
+/// which properties those are instead of leaving them to be inferred.
+fn scope() -> Value {
+    json!({
+        "checked": [
+            "the module bytes the endpoint served, against the executable digest the same \
+             endpoint reports for the contract",
+        ],
+        "notChecked": [
+            "that the recorded executable digest corresponds to any source revision or \
+             build, which is the provenance analysis rather than this command",
+            "that any party other than the endpoint corroborates the recorded digest",
+            "that the contract is secure, safe, correct or free of vulnerabilities",
+        ],
+    })
 }
 
 /// The human-readable view.
@@ -230,6 +280,16 @@ fn text(contract: &str, status: VerificationStatus, reason: &str) -> String {
     let _ = writeln!(out, "verify      {contract}");
     let _ = writeln!(out, "status      {}", status.as_str());
     let _ = writeln!(out, "reason      {reason}");
+    let _ = writeln!(
+        out,
+        "checked     the module bytes the endpoint served against the digest the same \
+         endpoint reports"
+    );
+    let _ = writeln!(
+        out,
+        "not checked source or build correspondence, corroboration by any other party, \
+         and anything about safety"
+    );
     let _ = writeln!(out);
     let _ = write!(
         out,
@@ -288,5 +348,54 @@ mod tests {
         assert!(!RequiredStatus::Verified.satisfied_by(VerificationStatus::PartiallyVerified));
         assert!(!RequiredStatus::Partially.satisfied_by(VerificationStatus::Unverified));
         assert!(!RequiredStatus::Verified.satisfied_by(VerificationStatus::Unknown));
+    }
+
+    #[test]
+    fn the_scope_names_what_was_not_checked_as_well_as_what_was() {
+        // The point of the field is the negative half. A consumer reading only `checked`
+        // would take `VERIFIED` for an independent attestation, which is the misreading
+        // this exists to prevent, so both lists must be present and non-empty and the
+        // unchecked one must name the three things a reader would otherwise assume.
+        let scope = scope();
+        let checked = scope["checked"].as_array().expect("a checked list");
+        let unchecked = scope["notChecked"].as_array().expect("an unchecked list");
+
+        assert_eq!(checked.len(), 1, "one comparison is made");
+        assert!(
+            unchecked.len() >= 3,
+            "the unchecked list must be the longer one: this command checks one thing"
+        );
+
+        let joined = unchecked
+            .iter()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>()
+            .join(" ");
+        for absent in ["source", "corroborates", "secure"] {
+            assert!(
+                joined.contains(absent),
+                "the unchecked list must say that `{absent}` was not established: {joined}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_verified_reason_says_both_readings_came_from_the_endpoint() {
+        // Pinned because it is the sentence that stops `VERIFIED` reading as an
+        // independent attestation. If it ever loses the same-source clause it has become
+        // a different claim than the one the command makes, and the word `VERIFIED`
+        // would then be the only thing left saying so.
+        assert!(
+            VERIFIED_REASON.contains("both readings come from the endpoint"),
+            "the reason must say the comparison is within one source: {VERIFIED_REASON}"
+        );
+        assert!(
+            VERIFIED_REASON.contains("internally consistent"),
+            "the reason must name what consistency is established: {VERIFIED_REASON}"
+        );
+        assert!(
+            VERIFIED_REASON.contains("not"),
+            "the reason must state the limit of the claim: {VERIFIED_REASON}"
+        );
     }
 }
