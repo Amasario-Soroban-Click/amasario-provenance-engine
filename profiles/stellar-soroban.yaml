@@ -1,0 +1,236 @@
+# The Stellar/Soroban analysis profile.
+#
+# WHAT A PROFILE IS
+#
+# A profile binds the engine's generic model to one concrete ecosystem: which
+# chains exist, what identifies them, which endpoints serve them, which entity and
+# relationship kinds this ecosystem can actually produce, and which normative
+# concepts from `amasario-provenance-spec` apply. It adds no semantics of its own.
+# Everything normative lives in the specification; this file says which parts of
+# it are reachable when the target is a Soroban contract on Stellar.
+#
+# It is engine configuration, not a specification document, so it is deliberately
+# not validated against a specification schema - the specification defines no
+# profile schema. It is validated by `scripts/run-ci.sh`, which checks that every
+# taxonomy id, relationship id and entity kind named here exists in a checkout of
+# the specification. A name that drifted on either side therefore fails CI rather
+# than being silently ignored at run time.
+#
+# WHAT IT DOES NOT DO
+#
+# It does not define protocol behaviour. Passphrases, network ids, endpoints and
+# the relationship between an entry and its signers are Stellar facts, taken from
+# the Stellar documentation and from the engine's own `amasario-network` crate,
+# which derives each network id from its passphrase and asserts the derivation
+# against the published value. Nothing here is recalled from memory.
+
+apiVersion: amasario.dev/v1
+specVersion: 1.0.0
+id: stellar-soroban
+name: Stellar / Soroban
+status: implemented
+
+description: >-
+  The profile for analysing Soroban contracts on Stellar. It binds the engine's
+  generic entity, relationship and evidence model to Stellar's networks and to the
+  Soroban contract execution model.
+
+specification:
+  # The normative layer this profile consumes. The engine implements this version
+  # or refuses the profile; it never redefines a term the specification owns.
+  repository: amasario-provenance-spec
+  specVersion: 1.0.0
+  apiVersion: amasario.dev/v1
+  # The taxonomies this profile selects from. Every term used below comes from one
+  # of these; the profile adds no vocabulary.
+  taxonomies:
+    - taxonomies/network-types.yaml
+    - taxonomies/relationship-types.yaml
+    - taxonomies/dependency-types.yaml
+    - taxonomies/evidence-types.yaml
+    - taxonomies/confidence-levels.yaml
+    - taxonomies/verification-statuses.yaml
+    - taxonomies/change-types.yaml
+    - taxonomies/artifact-types.yaml
+    - taxonomies/impact-types.yaml
+    - taxonomies/deployment-statuses.yaml
+
+# The environments an observation can be made against. Each `type` names a term
+# in `taxonomies/network-types.yaml`; `passphrase` and `networkId` are Stellar
+# protocol facts, and the network id is the SHA-256 of the passphrase.
+networks:
+  - name: futurenet
+    type: FUTURENET
+    passphrase: "Test SDF Future Network ; October 2022"
+    networkId: a3a1c6a78286713e29be0e9785670fa838d13917cd8eaeb4a3579ff1debc7fd5
+    rpc: https://rpc-futurenet.stellar.org
+    horizon: https://horizon-futurenet.stellar.org
+    authoritative: false
+    durability: reset_without_notice
+    notes: >-
+      State can be reset without notice, so an observation here must record its
+      ledger boundary and must not be treated as stable over time.
+
+  - name: testnet
+    type: TESTNET
+    passphrase: "Test SDF Network ; September 2015"
+    networkId: cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472
+    rpc: https://soroban-testnet.stellar.org
+    horizon: https://horizon-testnet.stellar.org
+    authoritative: false
+    durability: persistent_but_untrusted
+    default: true
+    notes: >-
+      Persistent enough for integration testing of discovery and verification, but
+      contract state is routinely recycled and testnet identifiers carry no
+      production meaning.
+
+  - name: mainnet
+    type: MAINNET
+    passphrase: "Public Global Stellar Network ; September 2015"
+    networkId: 7ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979
+    # No default endpoint. SDF operates public RPC endpoints for Futurenet and
+    # Testnet only, and Mainnet RPC is served by third-party providers, so the
+    # engine requires an explicit endpoint rather than shipping one it would be
+    # guessing at.
+    rpc: null
+    horizon: null
+    authoritative: true
+    durability: authoritative
+    requiresExplicitRpcEndpoint: true
+    notes: >-
+      Observations here are the only ones with production significance. Any
+      mutating command must require an explicit opt-in rather than being a default.
+
+# The entity kinds this ecosystem can produce. The set is the specification's
+# entity model intersected with what a Soroban/Stellar observation can establish.
+entities:
+  contract:
+    kind: CONTRACT
+    # Established from the contract's instance entry.
+    observed: true
+    notes: >-
+      A contract address alone is not an identity: a contract can be upgraded in
+      place, so the same address can execute different code at two ledgers. The
+      identity therefore includes the executable kind and, for a WASM contract, the
+      deployed module digest.
+  wasm:
+    kind: WASM
+    observed: true
+    notes: >-
+      Identified by the SHA-256 digest of the deployed module, which the engine both
+      reads from the instance entry and recomputes from the retrieved bytes, so the
+      two can be compared.
+  deployment:
+    kind: DEPLOYMENT
+    observed: true
+    # Only when the endpoint resolves the operation that last modified the contract's
+    # instance entry, which costs an operations request plus a bounded number of
+    # transaction reads. Otherwise the deployment is simply absent from the graph,
+    # not guessed at.
+    requiresModificationResolution: true
+  transaction:
+    kind: TRANSACTION
+    observed: true
+  source:
+    kind: SOURCE
+    observed: false
+    notes: >-
+      Not observable from the chain. A source revision is a claim until it is
+      checked, and the engine reports a claimed source as unverified rather than
+      folding it into a chain.
+  build:
+    kind: BUILD
+    observed: false
+    notes: >-
+      As with source: a build is claimed until evidence supports it, and the engine
+      does not invent a build record to make a chain look complete.
+  artifact:
+    kind: ARTIFACT
+    observed: partially
+    notes: >-
+      A deployment artifact is observable as the deployed module. A source archive
+      or lockfile is not reachable from the chain and must be supplied as evidence.
+
+# The relationships the engine may assert in this profile. Each names a term in
+# `taxonomies/relationship-types.yaml`; the arrow's meaning and its change
+# propagation are fixed by that taxonomy, not restated here.
+#
+# `basis` lists the terms from `taxonomies/evidence-types.yaml` / the engine's own
+# `Basis` enumeration that can establish the edge in this ecosystem. A relationship
+# whose basis is absent for an observation is not asserted at all.
+relationships:
+  - id: DEPENDS_ON
+    asserts: subject requires object in order to function or to be built
+    basis: [OBSERVED_INVOCATION, OBSERVED_EVENT]
+  - id: INVOCATES
+    asserts: subject contract made a cross-contract call into object contract
+    basis: [OBSERVED_INVOCATION, OBSERVED_EVENT]
+    notes: >-
+      Only assertable from an observed transaction or invocation record. Interface
+      similarity is explicitly insufficient.
+  - id: BUILT_FROM
+    asserts: subject build produced the subject from object source revision
+    basis: [ARTIFACT]
+    notes: >-
+      Requires build evidence. The engine has none from a chain observation alone,
+      so this edge is asserted only when a build record is supplied.
+  - id: DERIVED_FROM
+    asserts: the artifact was derived from the entity it names
+    basis: [ARTIFACT, EMBEDDED_DIGEST]
+  - id: DEPLOYED_AS
+    asserts: the deployed entity was deployed as the named deployment
+    basis: [DEPLOYMENT, TRANSACTION]
+  - id: VERIFIED_BY
+    asserts: the claim is verified by the named evidence or attestation
+    basis: [ATTESTATION]
+  - id: AFFECTS
+    asserts: a change to the subject affects the object
+    basis: [OBSERVATION]
+  - id: OBSERVED_IN
+    asserts: the entity was observed in the named boundary
+    basis: [OBSERVATION]
+
+# What the engine will and will not report for this profile. Stated here so that a
+# reader of a report can see the boundaries the analysis ran under without reading
+# the source.
+guarantees:
+  - A network failure is never reported as an empty result. A failed request and a
+    found-nothing result are distinct in the type and in the output.
+  - An observation is qualified by the ledger boundary it was made at, and a
+    bounded search says that it stopped rather than presenting itself as complete.
+  - Every dependency edge carries a basis, at least one evidence citation and a
+    verification status. An edge with none is not emitted.
+  - A contradiction is representable. When a module's bytes do not hash to the
+    digest the network records, the result is CONFLICTING rather than a failed
+    check reported as an empty one.
+  - Analysis is deterministic for the same input, specification version, network
+    observation boundary and engine version.
+
+nonGuarantees:
+  - Amasario is not a security scanner. Nothing this profile produces is a
+    statement that a contract is secure, safe, malicious or vulnerable.
+  - A verified provenance chain states that the evidence is consistent with the
+    claim. It says nothing about the trustworthiness of the contract.
+  - A dependency is not inferred from shared naming, shared ecosystem membership or
+    mutual mention.
+  - The engine does not read private source code, and no command requires a secret
+    or a private key.
+
+limits:
+  - Some contracts were deployed before the endpoint's retention window, so the
+    deployment operation that created them may be outside the observable range.
+    The engine reports the absence rather than a guess.
+  - A Stellar Asset Contract executes no module, so it has no WASM identity to
+    verify. Its provenance is reported as UNKNOWN rather than as a failure.
+  - Event feeds are pruned, so an invocation that left no unpruned trace cannot be
+    observed. Absence of an observed call is not evidence that no call occurred.
+
+cli:
+  # The commands this profile supports, and the flags that select it.
+  defaultNetwork: testnet
+  commands: [inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export]
+  notes: >-
+    `--network` selects one of the entries above; `--rpc` overrides the endpoint,
+    which is required for mainnet because none is published. `--depth` bounds
+    traversal, and the bound travels with every result.
