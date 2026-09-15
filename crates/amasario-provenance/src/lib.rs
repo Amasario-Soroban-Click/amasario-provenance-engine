@@ -44,6 +44,11 @@
 //! came from; an upgrade says what it currently is, and a record that did not establish
 //! the difference must not be read as either.
 //!
+//! **A chain is no stronger than its weakest link.** [`ProvenanceChain::weakest_confidence`]
+//! aggregates by minimum rather than by average, so four strong stages cannot hide one
+//! unsupported one, and [`verify_chain`] reports the stages the chain has no link for
+//! rather than presenting a bounded search as a complete provenance.
+//!
 //! # What this crate does not claim
 //!
 //! Amasario is not a security scanner. Nothing here is a safety verdict about a
@@ -51,10 +56,17 @@
 //!
 //! # Example
 //!
-//! A source record that resolves to one immutable tree:
+//! A chain that holds one stage, and reports the five it does not cover rather than
+//! presenting that one stage as a provenance:
 //!
 //! ```
-//! use amasario_provenance::{Repository, Revision, SourceProvenance, VcsKind};
+//! use amasario_core::{
+//!     Basis, Confidence, ConfidenceLevel, EntityKind, EntityRef, VerificationStatus,
+//! };
+//! use amasario_provenance::{
+//!     ChainLink, ChainLinkKind, ProvenanceChain, Repository, Revision, SourceProvenance,
+//!     VcsKind, verify_chain,
+//! };
 //!
 //! # fn main() -> amasario_core::Result<()> {
 //! let repository = Repository::new("https://github.com/example/token", VcsKind::Git)?;
@@ -67,7 +79,24 @@
 //!     vec!["transaction 9c1f...: the deploy operation's source claim".to_owned()],
 //! )?;
 //!
-//! assert_eq!(source.repository.owner.as_deref(), Some("example"));
+//! let mut chain = ProvenanceChain::new(EntityRef::new(EntityKind::Contract, "CDEMO")?)?;
+//! chain.push(ChainLink::new(
+//!     ChainLinkKind::SourceResolved,
+//!     EntityRef::new(EntityKind::Source, source.identity_digest().value())?,
+//!     None,
+//!     Basis::ConfiguredEndpoint,
+//!     Confidence::new(
+//!         ConfidenceLevel::HighConfidence,
+//!         vec!["the revision is a full commit digest".to_owned()],
+//!         vec![],
+//!     )?,
+//!     VerificationStatus::Verified,
+//! )?);
+//!
+//! let outcome = verify_chain(&chain);
+//! assert_eq!(chain.links.len(), 1);
+//! assert!(!outcome.is_verified(), "one stage is not a whole chain");
+//! assert_eq!(outcome.missing_links.len(), ChainLinkKind::all().len() - 1);
 //! # Ok(())
 //! # }
 //! ```
@@ -79,7 +108,9 @@ pub mod artifact;
 pub mod build;
 pub mod deployment;
 pub mod errors;
+pub mod matching;
 pub mod source;
+pub mod verification;
 
 // Re-exported together because they are used together: a caller recording a source,
 // a build and the artifact it produced needs the failure model that says what could
@@ -93,7 +124,14 @@ pub use build::{
 };
 pub use deployment::{DeploymentKind, DeploymentProvenance};
 pub use errors::{ProvenanceFailure, describe as describe_failure, first_failure};
+pub use matching::{
+    ChainLink, ChainLinkKind, MatchOutcome, ProvenanceChain, match_digests, match_rebuilt_module,
+    match_revisions,
+};
 pub use source::{Repository, Revision, RevisionKind, SourceProvenance, VcsKind};
+pub use verification::{
+    LinkAssessment, VerificationOutcome, require_digest_match, status_for_match, verify_chain,
+};
 
 #[cfg(test)]
 mod tests {
@@ -109,6 +147,37 @@ mod tests {
         assert_eq!(ArtifactType::Wasm.as_str(), "WASM");
         assert_eq!(ReproducibilityStatus::Reproduced.as_str(), "REPRODUCED");
         assert_eq!(DeploymentKind::Deploy.as_str(), "DEPLOY");
+        assert_eq!(ChainLinkKind::SourceToBuild.as_str(), "SOURCE_TO_BUILD");
+        assert_eq!(MatchOutcome::Match.as_str(), "MATCH");
         assert_eq!(REDACTED, "<redacted>");
+    }
+
+    #[test]
+    fn a_crate_level_chain_reports_the_stages_it_does_not_cover() {
+        let mut chain = ProvenanceChain::new(
+            amasario_core::EntityRef::new(amasario_core::EntityKind::Contract, "CDEMO")
+                .expect("a non-empty identifier"),
+        )
+        .expect("a contract reference starts a chain");
+        chain.push_if_absent(
+            ChainLink::new(
+                ChainLinkKind::SourceResolved,
+                amasario_core::EntityRef::new(amasario_core::EntityKind::Source, "digest")
+                    .expect("a non-empty identifier"),
+                None,
+                amasario_core::Basis::ConfiguredEndpoint,
+                amasario_core::Confidence::new(
+                    amasario_core::ConfidenceLevel::HighConfidence,
+                    vec!["a full commit digest".to_owned()],
+                    vec![],
+                )
+                .expect("evidence is cited"),
+                amasario_core::VerificationStatus::Verified,
+            )
+            .expect("the stage permits these endpoints"),
+        );
+        let outcome = verify_chain(&chain);
+        assert!(!outcome.is_verified());
+        assert_eq!(outcome.missing_links.len(), ChainLinkKind::all().len() - 1);
     }
 }
