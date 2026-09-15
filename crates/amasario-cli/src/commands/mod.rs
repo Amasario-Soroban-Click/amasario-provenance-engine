@@ -31,7 +31,8 @@ pub mod verify;
 
 use amasario_contract::{ContractInspection, InspectionRequest, Inspector};
 use amasario_core::{
-    Cancellation, ContractId, EngineError, EntityKind, EntityRef, Result, TruncationReason,
+    Cancellation, ContractId, EngineError, EntityKind, EntityRef, LedgerSequence, Result,
+    TruncationReason,
 };
 use amasario_dependency::{DependencySet, detect_from_invocations, resolve};
 use amasario_graph::Graph;
@@ -67,7 +68,18 @@ pub async fn observe(target: &TargetArgs, bounds: &BoundsArgs) -> Result<Contrac
     let mut request = InspectionRequest::identity_only(contract, now_rfc3339());
     request.max_transaction_reads = bounds.max_transactions;
     if bounds.scan_events {
-        request = request.scanning_events(EventQuery::for_contract(target.contract.clone()));
+        // The window is built here rather than defaulted inside the network layer, so
+        // that the two choices a caller can make - how far back, and how many pages -
+        // are visible in one place. The default is the recent window; see
+        // `DEFAULT_LOOKBACK_LEDGERS` for why starting at the retention floor is the
+        // one thing a dependency scan must not do.
+        let mut query = EventQuery::for_contract(target.contract.clone())
+            .with_max_pages(bounds.max_event_pages);
+        query = match bounds.from_ledger {
+            Some(ledger) => query.from(LedgerSequence::new(ledger)?),
+            None => query.recent(bounds.lookback),
+        };
+        request = request.scanning_events(query);
     }
 
     inspector.inspect(&cancellation, &request).await

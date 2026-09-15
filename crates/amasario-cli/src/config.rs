@@ -21,7 +21,9 @@ use amasario_contract::DEFAULT_MAX_TRANSACTION_READS;
 use amasario_core::{
     DEFAULT_MAX_DEPTH, DEFAULT_MAX_NODES, DepthBounds, EngineConfig, EngineError, Result,
 };
-use amasario_network::{KnownNetwork, NetworkTarget};
+use amasario_network::{
+    DEFAULT_LOOKBACK_LEDGERS, DEFAULT_MAX_EVENT_PAGES, KnownNetwork, NetworkTarget,
+};
 use clap::{Args, ValueEnum};
 
 /// The network a command observes, and how to reach it.
@@ -185,6 +187,36 @@ pub struct BoundsArgs {
     /// Scan the contract's events, which is what finds cross-contract calls.
     #[arg(long)]
     pub scan_events: bool,
+
+    /// How far back an event scan reaches, in ledgers, ending at the boundary.
+    ///
+    /// The default is one day. This is the choice that decides whether a dependency
+    /// answer describes the present or a week ago: an event page carries as many
+    /// events as its limit allows, so a scan that starts at the oldest ledger a node
+    /// retains spends its whole page budget on the oldest few minutes of the
+    /// retention window and never reaches recent activity.
+    #[arg(
+        long,
+        value_name = "LEDGERS",
+        default_value_t = DEFAULT_LOOKBACK_LEDGERS,
+        conflicts_with = "from_ledger"
+    )]
+    pub lookback: u32,
+
+    /// Scan forward from this ledger instead of over a recent window.
+    ///
+    /// For a deliberate historical analysis. The range is still clamped to what the
+    /// endpoint retains, and the result says when it was.
+    #[arg(long, value_name = "LEDGER", conflicts_with = "lookback")]
+    pub from_ledger: Option<u32>,
+
+    /// How many event pages the scan may read before it stops and says so.
+    #[arg(
+        long = "max-event-pages",
+        value_name = "N",
+        default_value_t = DEFAULT_MAX_EVENT_PAGES
+    )]
+    pub max_event_pages: usize,
 }
 
 impl Default for BoundsArgs {
@@ -194,6 +226,9 @@ impl Default for BoundsArgs {
             max_nodes: DEFAULT_MAX_NODES,
             max_transactions: DEFAULT_MAX_TRANSACTION_READS,
             scan_events: false,
+            lookback: DEFAULT_LOOKBACK_LEDGERS,
+            from_ledger: None,
+            max_event_pages: DEFAULT_MAX_EVENT_PAGES,
         }
     }
 }
