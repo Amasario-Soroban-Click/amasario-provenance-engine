@@ -39,6 +39,16 @@ fi
 step "formatting"
 cargo fmt --all -- --check
 
+step "shell scripts"
+# The same check CI runs, at the same severity. Skipped with a reason rather than
+# silently when shellcheck is not installed, because a step that quietly does nothing
+# is the failure this script exists to avoid.
+if command -v shellcheck >/dev/null 2>&1; then
+  shellcheck --severity=style "${script_dir}"/*.sh "${script_dir}"/*.env
+else
+  echo "SKIPPED: shellcheck is not installed. Install it to lint scripts/."
+fi
+
 step "linting (clippy, warnings denied)"
 cargo clippy --workspace --all-features --all-targets -- -D warnings
 

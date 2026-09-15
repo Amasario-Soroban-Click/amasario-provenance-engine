@@ -53,6 +53,14 @@ jobs:
       - name: Formatting
         run: cargo fmt --all -- --check
 
+      # The shell scripts are part of the product surface: `scripts/run-ci.sh` is what a
+      # contributor runs locally, `scripts/install.sh` is the documented way in, and
+      # `scripts/test-testnet.sh` is what the scheduled live test runs. A script that
+      # only ever gets executed by CI is still code that ships, so it is linted at the
+      # strictest severity rather than trusted. `shellcheck` ships on the runner image.
+      - name: Shell scripts
+        run: shellcheck --severity=style scripts/*.sh scripts/*.env
+
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
