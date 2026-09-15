@@ -1,0 +1,26 @@
+[package]
+name = "amasario-impact"
+description = "Impact analysis over the typed provenance graph: directional propagation driven by declared change semantics, with per-step evidence, path disclosure and distance classification."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-core = { workspace = true }
+amasario-dependency = { workspace = true }
+amasario-graph = { workspace = true }
+amasario-provenance = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
