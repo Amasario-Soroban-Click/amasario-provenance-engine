@@ -1,0 +1,77 @@
+name: Feature request
+description: Propose a capability, a relationship, an evidence class or a profile.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you file this: if what you want to change is what the engine *means* -
+        a relationship type, an evidence class, a confidence level, a verification
+        status - that change belongs in
+        [amasario-provenance-spec](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec).
+        This repository implements the specification; it does not define it.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change is this?
+      options:
+        - A new CLI command or flag
+        - A new capability in an existing crate
+        - A new profile for another ecosystem
+        - A new output format
+        - An integration (CI, container, library embedding)
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: |
+        What you are trying to do and cannot. Describe the task rather than the
+        solution - the shape of the task often suggests a different answer from the
+        one either of us had in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: What the answer would look like from where you sit. A command line, an API call, a field in a document.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: What evidence would support it
+      description: |
+        Required for anything that produces a claim about a contract. The
+        specification does not permit a relationship without a basis and a citation,
+        so a proposal that cannot say what observation establishes it is not yet
+        implementable - and saying so here is more useful than discovering it in
+        review.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you have tried instead
+      description: Existing commands, a script, another tool. What was wrong with it?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Before submitting
+      options:
+        - label: This describes a task, not a request for the engine to make a security judgement.
+          required: true
+        - label: I have checked that the specification does not already define this.
+          required: true

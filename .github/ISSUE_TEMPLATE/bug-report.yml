@@ -1,0 +1,105 @@
+name: Bug report
+description: Something the engine does incorrectly, or claims incorrectly.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report this.
+
+        **Do not report a security problem here.** Use the private channel in
+        [SECURITY.md](../SECURITY.md) instead. That includes a crash triggered by
+        malformed input, a credential appearing in output, and a false `VERIFIED`.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where does it happen?
+      description: The part of the project the problem is in.
+      options:
+        - A CLI command
+        - A library crate
+        - A document the engine produced (JSON, YAML, GraphML, DOT, report, snapshot)
+        - The specification conformance check
+        - CI or the build
+        - Documentation
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `amasario --version`, or the commit you built from.
+      placeholder: "amasario 1.0.0 (abc1234)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: What you ran
+      description: |
+        The exact command. If you used the library rather than the CLI, the smallest
+        code that reproduces it.
+      render: shell
+      placeholder: amasario dependencies --contract C... --network testnet --depth 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+      description: |
+        Both halves matter. If the engine reported a failure, say which one looked
+        wrong: a network failure, a "not found", a missing dependency, a status that
+        should have been `CONFLICTING` but was not.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: The output
+      description: |
+        Paste it as it was printed. If you used `--output`, attach the file.
+
+        **Redact credentials.** If your endpoint URL carries a key in its path, replace
+        that part with `…`.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: network
+    attributes:
+      label: Network and ledger
+      description: Which chain, and the boundary the output was observed at.
+      placeholder: testnet at ledger 1234567
+    validations:
+      required: false
+
+  - type: dropdown
+    id: determinism
+    attributes:
+      label: Does it happen every time?
+      options:
+        - Every time, with the same input
+        - Intermittently
+        - Only once, and I could not reproduce it
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have read the "What this engine does not claim" section of the README.
+          required: true
+        - label: This is not a security problem, and I have not pasted a secret, a key or a token.
+          required: true
+        - label: I searched the open issues for this problem.
+          required: true

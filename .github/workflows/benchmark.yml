@@ -1,0 +1,99 @@
+name: Benchmark
+
+# Benchmarks on a schedule and on demand, not as a merge gate.
+#
+# A benchmark that fails a pull request makes every contributor a performance engineer
+# whether or not the change could plausibly affect performance, and shared runners are
+# too noisy for a small regression to be distinguishable from a neighbour's load. What
+# this workflow is for is noticing drift: a scheduled run compared against the previous
+# run's Criterion baseline, and an archived report either way.
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "crates/amasario-graph/**"
+      - "crates/amasario-impact/**"
+      - "crates/amasario-dependency/**"
+      - "benches/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bench:
+    name: criterion benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Decide whether there are benchmarks to run
+        id: benches
+        run: |
+          set -euo pipefail
+          if [ -d benches ] && [ -n "$(find benches -maxdepth 1 -name '*.rs' -print -quit)" ]; then
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+            find benches -maxdepth 1 -name '*.rs' -print
+          else
+            echo "::notice title=No benchmarks::benches/ holds no benchmark files; nothing \
+          to run. This is reported rather than passed silently."
+            echo "run=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Restore the previous baseline
+        if: steps.benches.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: target/criterion
+          key: criterion-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            criterion-${{ github.ref }}-
+            criterion-
+
+      - name: Run the benchmarks
+        if: steps.benches.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          # `--save-baseline previous` writes this run beside the restored baseline rather
+          # than over it, so the comparison is against the last scheduled run and not
+          # against this run's own output.
+          cargo bench --profile bench -- --save-baseline previous
+
+      - name: Summarise the comparison
+        if: steps.benches.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          if [ -d target/criterion ]; then
+            echo "### Benchmark results" >> "${GITHUB_STEP_SUMMARY}"
+            # Criterion writes a machine-readable estimate per benchmark. Only the ones
+            # that moved by more than 10% are surfaced, because a wall of unchanged
+            # numbers is a wall nobody reads.
+            find target/criterion -name 'estimates.json' -print | while read -r estimate; do
+              name="$(basename "$(dirname "$estimate")")"
+              mean="$(jq -r '.mean.point_estimate // empty' "$estimate" 2>/dev/null || true)"
+              if [ -n "${mean}" ]; then
+                printf '%s: %.6f s\n' "${name}" "${mean}"
+              fi
+            done >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload the report
+        if: always() && steps.benches.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-report
+          path: target/criterion
+          if-no-files-found: ignore

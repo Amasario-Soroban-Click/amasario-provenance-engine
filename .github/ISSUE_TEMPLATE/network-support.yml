@@ -1,0 +1,93 @@
+name: Network or environment support
+description: The engine cannot reach, identify or correctly analyse an environment.
+title: "[network] "
+labels: ["network"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for a chain, an endpoint, or a deployment the engine does not handle
+        correctly - including one it should refuse and does not.
+
+        The engine identifies a chain by its **passphrase**, not by its name or its
+        endpoint, and it checks that identity before observing anything. That is
+        deliberate: two operators can give the same chain different names, so a
+        passphrase mismatch is fatal rather than a warning. If you are pointing the
+        engine at a network it does not ship a constant for, supply the passphrase with
+        `--passphrase` and `--network-name`, and say so below.
+
+  - type: dropdown
+    id: situation
+    attributes:
+      label: What is the environment?
+      options:
+        - A public network (mainnet, testnet, futurenet)
+        - A local network (Stellar Quickstart, standalone core)
+        - A private or partner environment
+        - A third-party RPC provider
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: passphrase
+    attributes:
+      label: The network passphrase
+      description: |
+        The passphrase the environment uses. It is not a secret - it is published for
+        every network - and it is the fact that identifies the chain, which is why it
+        is the most useful thing you can tell us.
+      placeholder: Standalone Network ; February 2017
+    validations:
+      required: true
+
+  - type: input
+    id: endpoint
+    attributes:
+      label: The endpoint
+      description: |
+        The RPC endpoint's host and path. **Do not paste a URL carrying a credential**;
+        if your provider puts a key in the path, replace it with `…`.
+      placeholder: https://rpc.example.test
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: What you ran, and what happened
+      description: The command and its full output, including the exit code.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: |
+        If you expected a dependency and got none, say which relationship you expected
+        and what observation you believe supports it. If you expected a refusal and got
+        an analysis, say so - a chain identified incorrectly is a defect whether or not
+        the analysis looked plausible.
+    validations:
+      required: true
+
+  - type: input
+    id: contract
+    attributes:
+      label: A contract address that demonstrates it
+      description: Optional, and public data. A contract we can point the engine at turns a description into a reproduction.
+      placeholder: C...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have not pasted a credential, a private key or a token.
+          required: true
+        - label: I understand the engine is read-only and has no command that submits a transaction.
+          required: true

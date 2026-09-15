@@ -1,0 +1,94 @@
+name: Security
+
+# Dependency and supply-chain hygiene, and nothing pretending to be a code audit.
+#
+# Clarifying what this workflow is *not*, because the name invites the wrong reading:
+# it does not look for vulnerabilities in the contracts Amasario analyses, and it makes
+# no claim about a contract's safety. It checks this repository's own dependencies
+# against the RustSec advisory database, its licence and source policy, and whether a
+# credential has been committed. Those are properties of the tool, not of anything the
+# tool reports.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # A new advisory can be published against a dependency that has not changed, so this
+    # runs on a schedule even when the repository does not.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  dependencies:
+    name: advisories, licences and sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+
+      - name: Check advisories, licences, bans and sources
+        run: cargo deny check
+
+      - name: Audit the lockfile against the RustSec database
+        run: |
+          set -euo pipefail
+          cargo install cargo-audit --locked
+          # `--deny warnings` turns an advisory with no fix available into a visible
+          # failure rather than a line in a log, so that the decision to keep the
+          # dependency is made deliberately and recorded somewhere.
+          cargo audit --deny warnings
+
+  supply-chain:
+    name: dependency review
+    runs-on: ubuntu-latest
+    # Only meaningful on a pull request, because it compares the lockfile against the
+    # base branch.
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          comment-summary-in-pr: on-failure
+
+  secrets:
+    name: no credential is committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The scanner needs the history, not just the tip, so that a secret deleted in
+          # a later commit is still found - which is the common case and the one a
+          # tip-only scan misses.
+          fetch-depth: 0
+
+      - name: Scan the history
+        run: |
+          set -euo pipefail
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "::warning title=Scanner unavailable::docker is unavailable, so the secret \
+          scan did not run. This is reported rather than passed silently."
+            exit 0
+          fi
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            zricethezav/gitleaks:latest \
+            detect --source=/repo --redact --verbose --exit-code=1

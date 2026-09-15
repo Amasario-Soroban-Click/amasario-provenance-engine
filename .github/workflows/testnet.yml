@@ -1,0 +1,131 @@
+name: Testnet
+
+# The live-network smoke test. It is not part of `CI`, and deliberately so: a live
+# network is not deterministic, so a failure here means either that something broke or
+# that testnet was reset, and nothing in the workflow can tell the two apart for you.
+#
+# It runs on a schedule and on demand rather than on every pull request, and it asserts
+# nothing about the analysis output - only that the commands reach a real endpoint, that
+# the chain is identified, and that they render. What it catches is the class of defect a
+# mock cannot: an endpoint that moved, a response shape that changed, a passphrase that
+# was transcribed wrongly.
+on:
+  schedule:
+    # 06:00 UTC on Mondays, so a drift is noticed at the start of a week rather than
+    # in the middle of a release.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      contract:
+        description: The contract to analyse. Defaults to the repository variable.
+        required: false
+        type: string
+      network:
+        description: futurenet or testnet.
+        required: false
+        default: testnet
+        type: choice
+        options: [testnet, futurenet]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testnet-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  smoke:
+    name: read-only analysis on a live network
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build the CLI
+        run: cargo build --release -p amasario-cli
+
+      - name: Decide whether there is a contract to analyse
+        id: target
+        env:
+          # A repository variable rather than a secret: a contract address on a public
+          # network is public, and putting it in a secret would imply otherwise.
+          VARIABLE_CONTRACT: ${{ vars.AMASARIO_TESTNET_CONTRACT }}
+          INPUT_CONTRACT: ${{ inputs.contract }}
+        run: |
+          set -euo pipefail
+          contract="${INPUT_CONTRACT:-${VARIABLE_CONTRACT}}"
+          if [ -z "${contract}" ]; then
+            echo "::notice title=No contract configured::Set the repository variable \
+          AMASARIO_TESTNET_CONTRACT (or dispatch with a contract) to run this smoke test."
+            echo "run=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "contract=${contract}" >> "${GITHUB_OUTPUT}"
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Smoke test
+        if: steps.target.outputs.run == 'true'
+        env:
+          AMASARIO_BIN: ${{ github.workspace }}/target/release/amasario
+        run: |
+          set -euo pipefail
+          network="${{ inputs.network }}"
+          "${GITHUB_WORKSPACE}/scripts/test-testnet.sh" "${{ steps.target.outputs.contract }}" "${network:-testnet}"
+
+      - name: Upload the artifacts
+        if: always() && steps.target.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: testnet-smoke
+          path: |
+            report.md
+            graph.dot
+          if-no-files-found: ignore
+
+  # A network that answers with the wrong passphrase must be refused. That check is the
+  # reason a wrong endpoint produces a clear error rather than an analysis of a chain
+  # nobody chose, and it is the one property of the network layer that can be verified
+  # without a contract to analyse - so it runs whether or not one is configured.
+  identity:
+    name: a wrong endpoint is refused
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build the CLI
+        run: cargo build --release -p amasario-cli
+
+      - name: Point testnet's passphrase at Futurenet's endpoint
+        run: |
+          set -euo pipefail
+          # The two chains have different passphrases, so this must fail as a network
+          # error rather than producing an analysis of Futurenet labelled testnet.
+          set +e
+          output="$(./target/release/amasario inspect \
+            --contract CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4 \
+            --network testnet \
+            --rpc https://rpc-futurenet.stellar.org 2>&1)"
+          status=$?
+          set -e
+          echo "${output}"
+          if [ "${status}" -ne 69 ]; then
+            echo "expected the passphrase mismatch to be a network failure (69), got ${status}" >&2
+            exit 1
+          fi
+          if ! printf '%s' "${output}" | grep -qi 'passphrase\|network'; then
+            echo "the error must name the network identity as the cause" >&2
+            exit 1
+          fi

@@ -1,0 +1,81 @@
+# Dependabot configuration.
+#
+# Grouped rather than one pull request per crate, and weekly rather than daily. This
+# crate graph has a hard constraint that a naive update breaks: `stellar-rpc-client`
+# exposes `stellar-xdr` types in its public API, so the two must move together or the
+# build fails with two mutually unconvertible sets of the same nominal types. Grouping
+# gives the update job a chance of satisfying that; a per-crate stream of pull requests
+# would produce failures that look unrelated to their cause.
+version: 2
+
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - rust
+    commit-message:
+      prefix: "chore(deps)"
+    # The Stellar crates are held in a single group, because they are a single decision.
+    # See the workspace manifest for why the three versions are aligned.
+    groups:
+      stellar:
+        patterns:
+          - "stellar-rpc-client"
+          - "stellar-xdr"
+          - "stellar-strkey"
+      # Serde and its formats move together often enough that separate pull requests
+      # were producing conflicts with each other.
+      serialization:
+        patterns:
+          - "serde"
+          - "serde_json"
+          - "serde_norway"
+      async-runtime:
+        patterns:
+          - "tokio"
+          - "tokio-test"
+          - "reqwest"
+          - "futures"
+          - "futures-retry"
+      # Everything else in one group, so a quiet week is one pull request rather than
+      # ten. A crate that needs care belongs in its own group above.
+      other:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "stellar-rpc-client"
+          - "stellar-xdr"
+          - "stellar-strkey"
+          - "serde"
+          - "serde_json"
+          - "serde_norway"
+          - "tokio"
+          - "tokio-test"
+          - "reqwest"
+          - "futures"
+          - "futures-retry"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: UTC
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns:
+          - "*"

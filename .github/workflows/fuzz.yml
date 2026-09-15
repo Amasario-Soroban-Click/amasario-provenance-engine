@@ -1,0 +1,95 @@
+name: Fuzz
+
+# Fuzzing on a schedule rather than on every pull request.
+#
+# The trade is deliberate: a fuzz run is only as good as the time it is given, and a
+# ninety-second run on a pull request finds shallow defects while costing every
+# contributor two minutes. A longer scheduled run finds the deep ones, and the corpus it
+# accumulates is cached, so each run starts from everything previous runs discovered.
+#
+# The targets exercise the paths where malformed input is expected rather than
+# hypothetical: a hostile RPC response, a corrupt snapshot, a hand-edited profile, a
+# crafted WebAssembly module. The invariant every target checks is the same - a bad input
+# produces a classified error, never a panic and never an unbounded loop.
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: How long to fuzz each target.
+        required: false
+        default: "300"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  targets:
+    name: fuzz targets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Decide whether there are targets to run
+        id: targets
+        run: |
+          set -euo pipefail
+          if [ -d fuzz ] && [ -n "$(find fuzz -maxdepth 2 -name 'fuzz_targets' -type d -print -quit)" ]; then
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+            find fuzz -maxdepth 3 -name '*.rs' -path '*fuzz_targets*' -print
+          else
+            echo "::notice title=No fuzz targets::fuzz/ holds no fuzz_targets directory; \
+          nothing to run. This is reported rather than passed silently."
+            echo "run=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Install cargo-fuzz
+        if: steps.targets.outputs.run == 'true'
+        run: cargo install cargo-fuzz --locked
+
+      - name: Restore the accumulated corpus
+        if: steps.targets.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: fuzz/corpus
+          key: fuzz-corpus-${{ github.sha }}
+          restore-keys: |
+            fuzz-corpus-
+
+      - name: Fuzz every target
+        if: steps.targets.outputs.run == 'true'
+        env:
+          SECONDS_PER_TARGET: ${{ inputs.seconds || '300' }}
+        run: |
+          set -euo pipefail
+          cd fuzz
+          # A fuzzer that finds a crash leaves the artifact in fuzz/artifacts, and the
+          # workflow uploads it below rather than swallowing it: the reproducer is the
+          # useful output, not the exit code.
+          for target in $(cargo fuzz list); do
+            echo "==> fuzzing ${target} for ${SECONDS_PER_TARGET}s"
+            cargo fuzz run "${target}" -- -max_total_time="${SECONDS_PER_TARGET}" \
+              -rss_limit_mb=4096
+          done
+
+      - name: Upload any crash artifacts
+        if: failure() && steps.targets.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: fuzz/artifacts
+          if-no-files-found: ignore

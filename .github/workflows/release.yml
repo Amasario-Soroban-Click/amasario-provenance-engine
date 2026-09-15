@@ -1,0 +1,148 @@
+name: Release
+
+# A release is triggered by a version tag, and only by one. Nothing here runs on a
+# branch push, because publishing is irreversible: a crate version cannot be withdrawn,
+# only yanked, and a yank breaks every build that pinned it.
+#
+# The validation runs before the publication step and in the same job, so a release
+# cannot publish a crate whose manifest, changelog or specification compatibility does
+# not agree with the tag.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate and package without publishing.
+        required: false
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  validate:
+    name: validate the tag against the repository
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check out the normative specification
+        uses: actions/checkout@v5
+        with:
+          repository: Amasario-Soroban-Click/amasario-provenance-spec
+          ref: main
+          path: .amasario-spec
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: The tag agrees with the workspace version
+        id: version
+        run: |
+          set -euo pipefail
+          manifest_version="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
+          tag="${GITHUB_REF_NAME#v}"
+          echo "manifest=${manifest_version} tag=${tag}"
+          if [ "${manifest_version}" != "${tag}" ]; then
+            echo "::error title=Version mismatch::Cargo.toml says ${manifest_version} and the \
+          tag says ${tag}. A release whose tag and manifest disagree cannot be described \
+          accurately to a consumer."
+            exit 1
+          fi
+          echo "version=${manifest_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: The full check suite
+        env:
+          AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
+        run: scripts/run-ci.sh
+
+      - name: The CHANGELOG documents this version
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          if ! grep -q "\[${version}\]" CHANGELOG.md && ! grep -q "## ${version}" CHANGELOG.md; then
+            echo "::error title=Missing changelog entry::CHANGELOG.md has no entry for ${version}."
+            exit 1
+          fi
+
+  publish:
+    name: publish to crates.io
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: release
+    if: github.event_name == 'push' || inputs.dry_run == 'false'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Publish in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CARGO_REGISTRY_TOKEN}" ]; then
+            echo "::error title=No registry token::CARGO_REGISTRY_TOKEN is unset. Add it as a \
+          repository secret before publishing."
+            exit 1
+          fi
+          if [ -z "${DRY_RUN}" ]; then
+            scripts/release.sh --publish
+          else
+            scripts/release.sh --publish --dry-run
+          fi
+
+  github-release:
+    name: create the GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Extract this version's changelog section
+        id: notes
+        run: |
+          set -euo pipefail
+          version="${{ needs.validate.outputs.version }}"
+          # The section runs from this version's heading to the next one. Captured with
+          # awk rather than by hand so the release notes are the changelog entry, not a
+          # summary that can drift from it.
+          awk -v version="${version}" '
+            $0 ~ "^## \\[" version "\\]" { capturing = 1; next }
+            capturing && /^## / { exit }
+            capturing { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error title=Empty release notes::the changelog section for ${version} is empty."
+            exit 1
+          fi
+          cat release-notes.md
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+          generate_release_notes: false

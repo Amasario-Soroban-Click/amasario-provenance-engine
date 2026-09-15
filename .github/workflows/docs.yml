@@ -1,0 +1,117 @@
+name: Docs
+
+# Documentation is checked rather than trusted.
+#
+# A broken intra-documentation link and an example that no longer compiles are both
+# documentation defects a reader hits before the maintainer does. Two checks cover the
+# Rust side: rustdoc with warnings denied, which catches a link to an item that was
+# renamed or removed, and a doctest run, which catches an example that stopped
+# compiling. The Markdown side is checked for links that point at files that exist,
+# because a relative path in `docs/` is exactly the kind of reference that rots silently.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rustdoc:
+    name: rustdoc and doctests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Documentation builds with no warnings
+        env:
+          # A broken intra-doc link is a warning by default and a failure here, because
+          # the whole point of the link is that a reader can follow it.
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps --all-features --document-private-items
+
+      - name: Every documentation example compiles
+        run: cargo test --workspace --all-features --doc
+
+  markdown:
+    name: Markdown links resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check relative links in the documentation
+        run: |
+          set -euo pipefail
+          # Every relative Markdown link is resolved against the repository. Links to
+          # `http(s)://` and to a bare anchor are left alone, because a network check
+          # would make this job flaky for reasons that have nothing to do with the
+          # documentation.
+          #
+          # The links are collected into a file first rather than checked inside a
+          # pipeline: a `while read` on the right-hand side of a pipe runs in a
+          # subshell, so an `exit 1` inside it would end the subshell and not the job -
+          # a check that reports a missing link and then passes.
+          missing="$(mktemp)"
+          find . -name '*.md' \
+            -not -path './target/*' \
+            -not -path './.amasario-spec/*' \
+            -not -path '*/node_modules/*' \
+            -print0 | while IFS= read -r -d '' file; do
+              dir="$(dirname "${file}")"
+              grep -oE '\]\([^)#][^)]*\)' "${file}" 2>/dev/null \
+                | sed -e 's/^](//' -e 's/)$//' \
+                | while IFS= read -r link; do
+                    case "${link}" in
+                      http://*|https://*|mailto:*|'') continue ;;
+                    esac
+                    target="${link%%#*}"
+                    [ -z "${target}" ] && continue
+                    if [ ! -e "${dir}/${target}" ]; then
+                      printf 'MISSING %s -> %s\n' "${file}" "${target}"
+                    fi
+                  done
+            done >> "${missing}"
+
+          if [ -s "${missing}" ]; then
+            while IFS= read -r line; do
+              echo "::error::${line}"
+            done < "${missing}"
+            cat "${missing}" >&2
+            exit 1
+          fi
+          echo "every relative Markdown link resolves"
+
+      - name: The documented commands exist
+        run: |
+          set -euo pipefail
+          cargo build -p amasario-cli
+          binary="./target/debug/amasario"
+          # A README that documents a command the binary does not have is worse than a
+          # README with no examples, so every command named in the README's usage block
+          # is checked against the binary's own help.
+          help="$("${binary}" --help)"
+          status=0
+          for command in inspect discover provenance dependencies graph impact \
+            snapshot diff verify report export; do
+            if ! printf '%s' "${help}" | grep -qE "^  ${command}\b"; then
+              echo "::error::the README documents 'amasario ${command}' but the binary has no such command"
+              status=1
+            fi
+          done
+          if [ "${status}" -ne 0 ]; then
+            exit 1
+          fi
+          echo "every documented command exists"

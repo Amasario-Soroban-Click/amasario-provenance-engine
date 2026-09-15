@@ -1,0 +1,159 @@
+name: Integration
+
+# The integration layer, which `CI` deliberately does not run.
+#
+# The distinction the two workflows exist to draw: `CI` proves the engine's own
+# behaviour with no network, and this proves the paths that need something outside the
+# process - a mocked endpoint, a recorded response, or a local Stellar network. Keeping
+# them apart means a flake here names an integration problem rather than leaving a
+# contributor unsure whether their change broke a unit test.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  # The offline integration suites: recorded fixtures and a mock endpoint, so this job
+  # is deterministic and runs on every pull request.
+  offline:
+    name: recorded fixtures and mocked endpoints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out the normative specification
+        uses: actions/checkout@v5
+        with:
+          repository: Amasario-Soroban-Click/amasario-provenance-spec
+          ref: main
+          path: .amasario-spec
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Integration test suites
+        env:
+          AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
+        run: |
+          # Only the suites that exist are run, and the list is printed, so a suite
+          # that has been renamed rather than removed is visible rather than silently
+          # skipped.
+          set -euo pipefail
+          if [ ! -d integration-tests ]; then
+            echo "integration-tests/ does not exist; nothing to run."
+            exit 1
+          fi
+          ls -1 integration-tests
+          cargo test --workspace --all-features --test '*' -- --include-ignored
+
+      - name: The CLI runs against the recorded fixtures
+        run: |
+          set -euo pipefail
+          cargo build -p amasario-cli
+          # `diff` and `export` are the two commands that need no network, so they are
+          # the two that can be exercised end to end from a fixture alone.
+          if [ -d fixtures/snapshots ]; then
+            before="$(find fixtures/snapshots -name '*before*.json' -print -quit)"
+            after="$(find fixtures/snapshots -name '*after*.json' -print -quit)"
+            if [ -n "${before}" ] && [ -n "${after}" ]; then
+              ./target/debug/amasario diff --before "${before}" --after "${after}" --format json >/dev/null
+              echo "diff ran over ${before} and ${after}"
+            fi
+          fi
+
+  # A local Stellar network, so the adapters are exercised against something that
+  # actually speaks the protocol rather than against a mock that encodes our own
+  # assumptions. Optional, because it needs a container image and a warm start.
+  local-network:
+    name: local Stellar network (Quickstart)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'integration-network')
+    services:
+      stellar:
+        image: stellar/quickstart:latest
+        ports:
+          - 8000:8000
+        env:
+          NETWORK: local
+          ENABLE_SOROBAN_RPC: "true"
+          LIMIT_STORAGE: "true"
+        options: >-
+          --health-cmd "curl -sf http://localhost:8000/soroban/rpc -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getHealth\"}'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Wait for the local network to serve its first ledger
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            if curl -sf http://localhost:8000/soroban/rpc \
+              -X POST -H 'Content-Type: application/json' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"getLatestLedger"}' >/dev/null; then
+              echo "the local RPC endpoint answered after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "the local RPC endpoint never answered" >&2
+          exit 1
+
+      - name: Reach a local network through the engine
+        env:
+          # The standalone network's passphrase, as published for stellar/quickstart:
+          # https://developers.stellar.org/docs/tools/quickstart/network-modes
+          AMASARIO_LOCAL_PASSPHRASE: Standalone Network ; February 2017
+          AMASARIO_LOCAL_RPC: http://localhost:8000/soroban/rpc
+        run: |
+          set -euo pipefail
+          cargo build -p amasario-cli
+
+          # The passphrase is a Stellar fact and is not one of the three the engine
+          # ships constants for, which is exactly why it is supplied: it is what lets
+          # the network identity check run against this chain rather than being skipped.
+          # Passing the testnet passphrase against this endpoint would be refused, and
+          # correctly so - that refusal is the check working.
+          #
+          # The contract is deliberately one that does not exist. The assertion is that
+          # the network was reached and the absence was classified as an absence rather
+          # than as a transport failure - the distinction the specification requires the
+          # engine to keep, and the one a mock cannot prove.
+          set +e
+          output="$(./target/debug/amasario inspect \
+            --contract CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4 \
+            --network-name local \
+            --passphrase "${AMASARIO_LOCAL_PASSPHRASE}" \
+            --rpc "${AMASARIO_LOCAL_RPC}" 2>&1)"
+          status=$?
+          set -e
+          echo "${output}"
+          if [ "${status}" -eq 69 ]; then
+            echo "the local endpoint could not be reached; the network layer failed" >&2
+            exit 1
+          fi
+          if [ "${status}" -ne 66 ]; then
+            echo "expected the absent contract to be classified as NOT_FOUND (66), got ${status}" >&2
+            exit 1
+          fi
+          echo "the engine reached the local chain and classified the absence (exit ${status})"
