@@ -27,8 +27,8 @@
 use amasario_core::{Basis, LedgerSequence, Result, TransactionHash};
 use serde::{Deserialize, Serialize};
 use stellar_xdr::{
-    ContractEvent, ContractEventBody, DiagnosticEvent, HostFunction, Operation, OperationBody,
-    ScAddress, ScSymbol, ScVal, TransactionEnvelope,
+    ContractEvent, ContractEventBody, ContractId as XdrContractId, DiagnosticEvent, Hash,
+    HostFunction, Operation, OperationBody, ScAddress, ScSymbol, ScVal, TransactionEnvelope,
 };
 
 use amasario_network::transactions::{
@@ -135,6 +135,20 @@ impl ContractInvocation {
         }
     }
 
+    /// Records whether the call is known to have succeeded.
+    ///
+    /// Set from the evidence rather than left absent, because the absence of this is not
+    /// neutral: the dependency rules refuse to establish runtime use from a transaction
+    /// whose outcome is unknown, so an invocation that carries no outcome produces no
+    /// dependency however much evidence is behind it. Leaving it unset is what made a
+    /// live testnet contract report an empty dependency set while every call it made was
+    /// sitting in the evidence.
+    #[must_use]
+    pub const fn with_success(mut self, successful: bool) -> Self {
+        self.successful = Some(successful);
+        self
+    }
+
     /// Whether this invocation names a caller distinct from its callee.
     ///
     /// A self-call is recorded but is not an edge a dependency can rest on, and
@@ -218,6 +232,32 @@ impl InvocationObservations {
             .collect()
     }
 
+    /// The invocations that concern `contract`: the calls made *to* it, and the
+    /// cross-contract calls made *by* it.
+    ///
+    /// Both directions are needed, and they answer different questions. A call to the
+    /// subject establishes that the subject is used; a call by the subject establishes
+    /// what it depends on. This is the filter to collect with, because a filter on the
+    /// callee alone keeps the first and discards the second - and the second is exactly
+    /// the set of edges a dependency can rest on, so collecting with it leaves the
+    /// dependency graph empty by construction.
+    ///
+    /// Self-calls are kept when they arrive as calls *to* the subject, because the fact
+    /// that the subject was entered still holds; the dependency detector is where a
+    /// self-call is refused as an edge, since that is a question about relationships
+    /// rather than about what was observed.
+    #[must_use]
+    pub fn touching(&self, contract: &str) -> Vec<&ContractInvocation> {
+        self.invocations
+            .iter()
+            .filter(|invocation| {
+                invocation.callee == contract
+                    || (invocation.is_cross_contract()
+                        && invocation.caller.as_deref() == Some(contract))
+            })
+            .collect()
+    }
+
     /// The cross-contract edges, which are the ones a dependency may rest on.
     #[must_use]
     pub fn cross_contract_edges(&self) -> Vec<&ContractInvocation> {
@@ -243,6 +283,13 @@ pub fn invocations_from_transaction(
 
     let mut invocations: Vec<ContractInvocation> = Vec::new();
 
+    // The transaction's own outcome, which every invocation it produced inherits. It is
+    // read from the observation rather than left absent, because the dependency rules
+    // treat an unknown outcome as a reason to refuse: a call whose transaction is not
+    // recorded as successful cannot establish runtime use, so an invocation that carries
+    // no outcome establishes nothing and a live run reports no dependencies at all.
+    let succeeded = observation.successful;
+
     // The top-level invocations, from the transaction's own operations. These are
     // read first because they are the root of any call tree.
     if let Some(envelope) = &observation.envelope {
@@ -252,6 +299,7 @@ pub fn invocations_from_transaction(
                 &transaction,
                 ledger,
                 u32::try_from(index).ok(),
+                succeeded,
                 &mut invocations,
             );
         }
@@ -259,8 +307,12 @@ pub fn invocations_from_transaction(
 
     let diagnostics_available = !observation.diagnostic_events.is_empty();
     let nesting_recovered = if diagnostics_available {
-        let nested =
-            invocations_from_diagnostics(&observation.diagnostic_events, &transaction, ledger);
+        let nested = invocations_from_diagnostics(
+            &observation.diagnostic_events,
+            &transaction,
+            ledger,
+            succeeded,
+        );
         let recovered = !nested.is_empty();
         invocations.extend(nested);
         recovered
@@ -327,6 +379,7 @@ fn push_operation_invocations(
     transaction: &TransactionHash,
     ledger: Option<LedgerSequence>,
     operation_index: Option<u32>,
+    succeeded: bool,
     out: &mut Vec<ContractInvocation>,
 ) {
     let OperationBody::InvokeHostFunction(invoke) = &operation.body else {
@@ -341,13 +394,16 @@ fn push_operation_invocations(
     let Some(callee) = contract_strkey(&args.contract_address) else {
         return;
     };
-    out.push(ContractInvocation::from_operation(
-        callee,
-        Some(symbol_text(&args.function_name)),
-        transaction.clone(),
-        ledger,
-        operation_index,
-    ));
+    out.push(
+        ContractInvocation::from_operation(
+            callee,
+            Some(symbol_text(&args.function_name)),
+            transaction.clone(),
+            ledger,
+            operation_index,
+        )
+        .with_success(succeeded),
+    );
 }
 
 /// The operations of an envelope, for either transaction kind.
@@ -369,6 +425,7 @@ fn invocations_from_diagnostics(
     diagnostics: &[DiagnosticEvent],
     transaction: &TransactionHash,
     ledger: Option<LedgerSequence>,
+    succeeded: bool,
 ) -> Vec<ContractInvocation> {
     let mut out: Vec<ContractInvocation> = Vec::new();
     let mut stack: Vec<String> = Vec::new();
@@ -379,23 +436,30 @@ fn invocations_from_diagnostics(
         };
         match topic.as_str() {
             FN_CALL_TOPIC => {
-                let Some(callee) = event_contract(&event.event) else {
+                let Some(callee) = fn_call_callee(&event.event) else {
                     continue;
                 };
-                let function = second_payload_symbol(&event.event);
+                let function = fn_call_function(&event.event);
                 let caller = stack.last().cloned();
                 // Every `fn_call` is an invocation, including a self-call: the host
                 // emitted the marker because a call was entered, and a contract that
                 // calls itself is a fact a consumer may need to see. The caller is
                 // whatever was most recently entered, which is `None` at the root.
-                out.push(ContractInvocation::from_diagnostic(
-                    callee.clone(),
-                    caller,
-                    function,
-                    transaction.clone(),
-                    ledger,
-                    None,
-                ));
+                // The transaction's outcome ends *in the host*, so a marker inside a
+                // failed transaction is not a call that happened even though the
+                // marker was emitted. Both signals are required, which is what
+                // `in_successful_contract_call` is for.
+                out.push(
+                    ContractInvocation::from_diagnostic(
+                        callee.clone(),
+                        caller,
+                        function,
+                        transaction.clone(),
+                        ledger,
+                        None,
+                    )
+                    .with_success(succeeded && event.in_successful_contract_call),
+                );
                 stack.push(callee);
             },
             FN_RETURN_TOPIC | FN_ERROR_TOPIC => {
@@ -420,25 +484,76 @@ fn first_symbol(event: &ContractEvent) -> Option<String> {
     }
 }
 
-/// The second topic of an event, when it is a symbol.
+/// The contract a `fn_call` diagnostic names as the callee.
 ///
-/// A `fn_call` event's topics are the marker, the contract and the function name,
-/// so the function is in the second payload position after the marker.
-fn second_payload_symbol(event: &ContractEvent) -> Option<String> {
+/// The second topic, an `SCV_ADDRESS`, is the callee and it is authoritative. The
+/// `contractID` field is **not**: on a `fn_call` marker it names the contract that
+/// emitted the marker, which is the *enclosing* call. Reading the field as the callee
+/// therefore attributes every nested call to its own caller, and the result is a graph
+/// in which every contract appears to call nothing but itself - which is worse than an
+/// empty graph, because it looks like an answer.
+///
+/// Both shapes are decoded from real testnet `diagnosticEventsXdr`, not inferred. A
+/// top-level entry is `contractID = None,
+/// topics = [Symbol("fn_call"), Address(<callee>), Symbol("place")]`; a nested one is
+/// `contractID = Some(<caller>),
+/// topics = [Symbol("fn_call"), Address(<callee>), Symbol("transfer")]`. The address
+/// topic is the callee in both.
+///
+/// The field is kept as a fallback for a producer that puts the callee there and not in
+/// the topics, which costs nothing and is the shape the earlier tests assumed.
+fn fn_call_callee(event: &ContractEvent) -> Option<String> {
     let ContractEventBody::V0(body) = &event.body;
-    match body.topics.get(1)? {
-        ScVal::Symbol(symbol) => Some(symbol_text(symbol)),
-        _ => None,
+    if let Some(callee) = body.topics.get(1).and_then(address_contract) {
+        return Some(callee);
     }
-}
-
-/// The contract an event was emitted by.
-fn event_contract(event: &ContractEvent) -> Option<String> {
     event
         .contract_id
         .as_ref()
-        .map(|id| contract_strkey(&ScAddress::Contract(id.clone())))
-        .unwrap_or(None)
+        .and_then(|id| contract_strkey(&ScAddress::Contract(id.clone())))
+}
+
+/// The function name a `fn_call` diagnostic names.
+///
+/// The first symbol after the marker, whichever position it lands in. The host's topics
+/// are `[fn_call, address, function]`, so that is the third topic - but taking a fixed
+/// index would be wrong in the other direction for a producer that sets `contractID` and
+/// emits `[fn_call, function]`, where the name is second. Looking for the symbol rather
+/// than counting positions reads both, and reads neither as the callee address, which is
+/// not a symbol and would otherwise present a named call as an unnamed one.
+///
+/// A missing name is not treated as malformed: it means the evidence did not name the
+/// function, which is already a distinguishable outcome in [`FunctionResolution`].
+fn fn_call_function(event: &ContractEvent) -> Option<String> {
+    let ContractEventBody::V0(body) = &event.body;
+    body.topics.iter().skip(1).find_map(|topic| match topic {
+        ScVal::Symbol(symbol) => Some(symbol_text(symbol)),
+        _ => None,
+    })
+}
+
+/// The contract a topic names, when it names one.
+///
+/// Two encodings have to be read, and the one that matters is not the obvious one. A
+/// contract value in an ordinary event topic is an `SCV_ADDRESS`, but the callee of a
+/// `fn_call` marker is emitted as `SCV_BYTES` holding the raw 32-byte contract id -
+/// which is what testnet actually carries, confirmed by decoding the diagnostic events
+/// of a live transaction: `topics = [Symbol("fn_call"), Bytes(<32 bytes>),
+/// Symbol("transfer")]`. Accepting only the address form therefore recovers no nested
+/// call at all, while accepting only the bytes form would miss the other.
+///
+/// Thirty-two bytes exactly. A `fn_call` topic is never a variable-length byte string,
+/// so a value of any other length is refused rather than truncated into an identifier
+/// that would name some other contract.
+fn address_contract(value: &ScVal) -> Option<String> {
+    match value {
+        ScVal::Address(address) => contract_strkey(address),
+        ScVal::Bytes(bytes) => {
+            let raw: [u8; 32] = bytes.0.as_slice().try_into().ok()?;
+            contract_strkey(&ScAddress::Contract(XdrContractId(Hash(raw))))
+        },
+        _ => None,
+    }
 }
 
 /// Reads a symbol's text.
@@ -517,6 +632,25 @@ mod tests {
 
     fn symbol(value: &str) -> ScVal {
         ScVal::Symbol(ScSymbol(value.parse().expect("a short symbol")))
+    }
+
+    fn address_value(payload: [u8; 32]) -> ScVal {
+        ScVal::Address(ScAddress::Contract(XdrContractId(Hash(payload))))
+    }
+
+    /// A `fn_call` marker in the shape the host actually emits on the wire.
+    ///
+    /// This is the detail the earlier tests got wrong, and getting it wrong is why they
+    /// passed while the engine recovered nothing from a live network. The host does not
+    /// set `contractID` on these events - a diagnostic event has no emitting contract,
+    /// the callee is the payload - so the callee is `topics[1]` as an address and the
+    /// function is `topics[2]`. A test that puts the callee in `contractID` and the
+    /// function in `topics[1]` is testing a shape no node produces.
+    fn fn_call(callee: [u8; 32], function: &str) -> DiagnosticEvent {
+        diagnostic(
+            vec![symbol("fn_call"), address_value(callee), symbol(function)],
+            None,
+        )
     }
 
     fn observation(
@@ -603,9 +737,9 @@ mod tests {
         let b = [2_u8; 32];
         let c = [3_u8; 32];
         let diagnostics = vec![
-            diagnostic(vec![symbol("fn_call"), symbol("a_fn")], Some(a)),
-            diagnostic(vec![symbol("fn_call"), symbol("b_fn")], Some(b)),
-            diagnostic(vec![symbol("fn_call"), symbol("c_fn")], Some(c)),
+            fn_call(a, "a_fn"),
+            fn_call(b, "b_fn"),
+            fn_call(c, "c_fn"),
             diagnostic(vec![symbol("fn_return")], Some(c)),
             diagnostic(vec![symbol("fn_return")], Some(b)),
             diagnostic(vec![symbol("fn_return")], Some(a)),
@@ -645,6 +779,132 @@ mod tests {
     }
 
     #[test]
+    fn a_fn_call_names_its_callee_in_the_topics_rather_than_the_contract_field() {
+        // The regression. A `fn_call` diagnostic carries no `contractID`, so a reader
+        // that insists on that field recovers nothing and reports a contract as having
+        // no dependencies - when a contract's calls are the only thing it has.
+        let a = [1_u8; 32];
+        let b = [2_u8; 32];
+        let diagnostics = vec![fn_call(a, "enter"), fn_call(b, "transfer")];
+
+        let observations =
+            invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");
+
+        assert!(
+            observations.nesting_recovered,
+            "the callee is in the topics, so the call tree is recoverable without contractID"
+        );
+        let into_b = observations
+            .for_callee(&address(b))
+            .into_iter()
+            .next()
+            .expect("B was entered, and its address came from the second topic");
+        assert_eq!(into_b.caller.as_deref(), Some(address(a).as_str()));
+        assert_eq!(
+            into_b.function.as_deref(),
+            Some("transfer"),
+            "the function is the third topic; reading the second would return the address"
+        );
+        assert_eq!(observations.cross_contract_edges().len(), 1);
+    }
+
+    #[test]
+    fn a_nested_fn_call_names_the_callee_not_the_contract_that_emitted_the_marker() {
+        // The shape that produced a graph of self-calls. A nested marker carries the
+        // *caller* in `contractID`, because that is the contract whose execution
+        // emitted it, while the callee is the address topic. Reading the field first
+        // makes every nested call look like a call to the caller, so a contract that
+        // calls the fee contract appears to call itself and no edge is ever found.
+        let caller = [1_u8; 32];
+        let callee = [2_u8; 32];
+        let diagnostics = vec![diagnostic(
+            vec![symbol("fn_call"), address_value(callee), symbol("transfer")],
+            Some(caller),
+        )];
+
+        let observations =
+            invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");
+        let invocation = observations
+            .invocations
+            .first()
+            .expect("the call was recovered");
+
+        assert_eq!(
+            invocation.callee,
+            address(callee),
+            "the callee is the address topic, not the emitting contract"
+        );
+        assert_ne!(
+            invocation.callee,
+            address(caller),
+            "attributing the call to the caller is the defect this guards"
+        );
+    }
+
+    #[test]
+    fn a_fn_call_that_does_carry_its_callee_in_the_contract_field_is_still_read() {
+        // A producer that sets the field is describing the same fact, so both readings
+        // are accepted. The topics form is the one the host emits; this guards the
+        // other against removal by someone who only ever sees testnet.
+        let a = [1_u8; 32];
+        let diagnostics = vec![diagnostic(vec![symbol("fn_call"), symbol("a_fn")], Some(a))];
+
+        let observations =
+            invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");
+        let invocation = observations
+            .for_callee(&address(a))
+            .into_iter()
+            .next()
+            .expect("the callee came from the field");
+        assert_eq!(invocation.callee, address(a));
+        assert_eq!(invocation.function.as_deref(), Some("a_fn"));
+    }
+
+    #[test]
+    fn touching_keeps_both_the_calls_made_to_a_subject_and_the_calls_it_makes() {
+        // The second half of the same defect. A call to the subject says the subject is
+        // used; a call by the subject says what it depends on. Filtering on the callee
+        // alone keeps the first and discards the second, which is the entire edge set
+        // a dependency can rest on - so the dependency graph comes out empty by
+        // construction, however much evidence was read.
+        let subject = [1_u8; 32];
+        let dep = [2_u8; 32];
+        let unrelated = [3_u8; 32];
+        let diagnostics = vec![
+            fn_call(subject, "enter"),
+            fn_call(dep, "transfer"),
+            fn_call(unrelated, "elsewhere"),
+        ];
+
+        let observations =
+            invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");
+        let subject_str = address(subject);
+        let dep_str = address(dep);
+
+        let touching = observations.touching(&subject_str);
+        assert_eq!(
+            touching.len(),
+            2,
+            "the call into the subject and the call out of it"
+        );
+        assert_eq!(
+            observations.for_callee(&subject_str).len(),
+            1,
+            "the filter it replaced kept only the incoming call"
+        );
+
+        let outgoing = touching
+            .iter()
+            .find(|invocation| invocation.callee == dep_str)
+            .expect("the outgoing edge is kept");
+        assert_eq!(outgoing.caller.as_deref(), Some(subject_str.as_str()));
+        assert!(
+            outgoing.is_cross_contract(),
+            "an outgoing call is the edge a dependency rests on"
+        );
+    }
+
+    #[test]
     fn a_diagnostic_event_that_is_not_a_call_marker_is_ignored() {
         let diagnostics = vec![
             diagnostic(vec![symbol("transfer"), symbol("amount")], Some([1_u8; 32])),
@@ -671,8 +931,8 @@ mod tests {
         let b = [2_u8; 32];
         let diagnostics = vec![
             diagnostic(vec![symbol("fn_return")], None),
-            diagnostic(vec![symbol("fn_call"), symbol("a_fn")], Some(a)),
-            diagnostic(vec![symbol("fn_call"), symbol("b_fn")], Some(b)),
+            fn_call(a, "a_fn"),
+            fn_call(b, "b_fn"),
         ];
 
         let observations =
@@ -692,10 +952,7 @@ mod tests {
     #[test]
     fn a_self_call_is_recorded_but_is_not_a_cross_contract_edge() {
         let a = [1_u8; 32];
-        let diagnostics = vec![
-            diagnostic(vec![symbol("fn_call"), symbol("outer")], Some(a)),
-            diagnostic(vec![symbol("fn_call"), symbol("inner")], Some(a)),
-        ];
+        let diagnostics = vec![fn_call(a, "outer"), fn_call(a, "inner")];
 
         let observations =
             invocations_from_transaction(&observation(None, diagnostics)).expect("well formed");

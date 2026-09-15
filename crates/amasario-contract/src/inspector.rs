@@ -561,9 +561,14 @@ impl<'a> Inspector<'a> {
                 continue;
             };
             read += 1;
+            // Collected in both directions. A filter on the callee alone would keep
+            // only the calls made *to* the subject, and those are precisely the ones
+            // that establish nothing about what the subject depends on: the edges a
+            // dependency rests on are the calls the subject made, which that filter
+            // discards. See `InvocationObservations::touching`.
             invocations.extend(
                 invocations_from_transaction(&observation)?
-                    .for_callee(request.contract.as_str())
+                    .touching(request.contract.as_str())
                     .into_iter()
                     .cloned(),
             );

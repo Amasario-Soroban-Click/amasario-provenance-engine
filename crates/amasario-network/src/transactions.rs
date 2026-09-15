@@ -83,6 +83,10 @@ pub async fn fetch_transaction(
 
     let ledger = response.ledger.map(LedgerSequence::new).transpose()?;
     let successful = response.status.eq_ignore_ascii_case("SUCCESS");
+    let diagnostic_events = diagnostic_events_of(
+        response.result_meta.as_ref(),
+        &response.events.diagnostic_events,
+    );
 
     Ok(Some(TransactionObservation {
         hash: response.tx_hash.unwrap_or_else(|| hash.as_str().to_owned()),
@@ -95,8 +99,51 @@ pub async fn fetch_transaction(
         result_meta: response.result_meta,
         contract_events: response.events.contract_events,
         transaction_events: response.events.transaction_events,
-        diagnostic_events: response.events.diagnostic_events,
+        diagnostic_events,
     }))
+}
+
+/// The diagnostic events a transaction carries.
+///
+/// Read from the transaction's own metadata, with the endpoint's accessor as a fallback
+/// only. The fallback is not the primary source, and the reason is worth recording
+/// because it is invisible from this side of the API and cost the engine every nested
+/// call it should have recovered.
+///
+/// On the current protocol the metadata is `TransactionMeta::V4`, whose diagnostic
+/// events live in `meta.diagnostic_events`. A node also publishes the same events as a
+/// top-level `diagnosticEventsXdr` on the transaction response. The bundled RPC client
+/// reads a *third* place - a `diagnosticEventsXdr` nested inside the response's `events`
+/// object - which the node does not populate: measured against testnet, a successful
+/// transaction returned 49 diagnostic events at the top level, an `events` object
+/// holding only `contractEventsXdr` and `transactionEventsXdr`, and an empty list from
+/// the client's own accessor.
+///
+/// So a reader that trusts that accessor sees no diagnostic events on any transaction,
+/// recovers no call nesting, and reports every contract as having no dependencies. The
+/// metadata is checked first and the fallback is used only when the metadata yielded
+/// nothing, so an endpoint or client that populates the other path is still read.
+fn diagnostic_events_of(
+    meta: Option<&TransactionMeta>,
+    endpoint_events: &[DiagnosticEvent],
+) -> Vec<DiagnosticEvent> {
+    let from_meta: Vec<DiagnosticEvent> = match meta {
+        Some(TransactionMeta::V4(v4)) => v4.diagnostic_events.to_vec(),
+        Some(TransactionMeta::V3(v3)) => v3
+            .soroban_meta
+            .as_ref()
+            .map(|soroban| soroban.diagnostic_events.to_vec())
+            .unwrap_or_default(),
+        // V0, V1 and V2 predate Soroban, so a transaction under them has no host
+        // diagnostics to lose.
+        _ => Vec::new(),
+    };
+
+    if from_meta.is_empty() {
+        endpoint_events.to_vec()
+    } else {
+        from_meta
+    }
 }
 
 /// The contract addresses a transaction names, in a stable order.
