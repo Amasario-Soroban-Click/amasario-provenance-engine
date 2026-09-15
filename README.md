@@ -1,5 +1,16 @@
 # AMASARIO — Provenance Engine
 
+[![CI](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/ci.yml)
+[![Testnet](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/testnet.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/testnet.yml)
+[![Security](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/security.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Rust: 1.98.1](https://img.shields.io/badge/rust-1.98.1-orange.svg)](rust-toolchain.toml)
+[![Specification: 1.0.0](https://img.shields.io/badge/amasario--spec-1.0.0-informational.svg)](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec)
+
+The **Testnet** badge is the live test: it runs on a schedule against a real contract on
+testnet and asserts the analysis, not just that the commands exited zero. A red badge
+there means the engine, or the world the committed target was chosen from, has changed.
+
 **Soroban contract dependency, provenance and impact infrastructure.**
 
 This repository is `amasario-provenance-engine`, the **execution and analysis layer**
@@ -27,8 +38,8 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | Crate | Responsibility | Status |
 | --- | --- | --- |
 | `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 149 tests (+9 specification-conformance) |
-| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 101 tests |
-| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 110 tests |
+| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 102 tests |
+| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 109 tests |
 | `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 113 tests |
 | `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 102 tests |
 | `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 107 tests |
@@ -37,14 +48,19 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
 | `amasario-report` | JSON, Markdown, DOT and JUnit report generation | implemented, 29 tests |
 | `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
-| `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 27 tests |
+| `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 31 tests |
 
-`cargo test --workspace --all-features` passes **1077 tests**, of which 969 are the unit
-and per-crate suites of the twelve crates above and 108 are the nine end-to-end suites
-in `integration-tests` — `network`, `contracts`, `provenance`, `dependencies`, `graphs`,
-`impact`, `snapshots`, `verification` and `reports`. Those suites run against a
-generated corpus under `fixtures/` and never reach the live network, so CI does not go
-flaky because a public endpoint was busy.
+`cargo test --workspace --all-features` passes **1088 tests**, of which 974 are the unit
+and per-crate suites of the twelve crates above and 114 are the ten end-to-end suites
+in `integration-tests` — `network`, `captures`, `contracts`, `provenance`, `dependencies`,
+`graphs`, `impact`, `snapshots`, `verification` and `reports`.
+
+Six of those 114 do not generate anything: `captures` serves the four responses under
+`fixtures/` that were read off testnet verbatim, over a real socket, into the adapters'
+own client — the suite that exists because three live defects were invisible in every
+hand-written document. The other eight suites run against a generated corpus. None of the
+ten reaches the live network, so CI does not go flaky because a public endpoint was busy;
+the live test is `testnet.yml`, which is scheduled rather than triggered by a pull request.
 
 The nine specification-conformance tests in `amasario-core` are `#[ignore]`d by default
 because they read a checkout of the normative specification; CI provides one and runs
@@ -141,6 +157,44 @@ conclusion the engine reaches on its own. The engine reports factual states inst
 
 The engine also never logs secrets and never accepts them as command-line arguments,
 because those appear in process history.
+
+## Use it in your own CI
+
+The engine ships a composite action, so a project that wants a dependency or verification
+gate does not have to work out how to build it first:
+
+```yaml
+- uses: Amasario-Soroban-Click/amasario-provenance-engine/.github/actions/amasario@v1
+  with:
+    contract: CABC...
+    network: testnet
+    command: dependencies
+    args: --scan-events --depth 2
+    output: dependency-report.md
+```
+
+The action builds the engine from the ref you pinned, so the action and the engine cannot
+drift, and it writes the rendered document to the job summary as well as to a file. Both
+the action and the engine are read-only: nothing in this repository submits a
+transaction.
+
+A release gate reads `verify` and branches on a status that carries its own limits —
+`scope.checked` and `scope.notChecked` say what was compared and what was not, so a
+pipeline does not have to take `VERIFIED` for more than it is:
+
+```yaml
+- uses: Amasario-Soroban-Click/amasario-provenance-engine/.github/actions/amasario@v1
+  with:
+    contract: CABC...
+    command: verify
+    require: partially
+    format: json
+    output: verification.json
+```
+
+Both examples run against a real network, so both need a reachable endpoint. For a gate
+that must not depend on a public service, run the CLI against a local standalone chain, or
+compare two committed snapshots with `amasario diff`, which reads files and nothing else.
 
 ## Building
 
