@@ -22,7 +22,16 @@ ignore = []
 # An unmaintained dependency is surfaced rather than suppressed. If one has to be
 # accepted, it belongs here with a reason and a removal condition.
 unmaintained = "workspace"
-severity-threshold = "low"
+# There is deliberately no `severity-threshold` key. It was removed in cargo-deny 0.20,
+# and while it existed it was the wrong control for this repository: it silently filtered
+# advisories below a severity, so a low-severity advisory against a dependency the engine
+# parses untrusted input with would have been dropped rather than read. Every advisory on
+# the workspace's own dependencies is now reported, and the decision to accept one is made
+# by adding it to `ignore` above with a reason - which is a decision a reviewer can see.
+#
+# The version and the schema move independently of this repository, so the configuration
+# is validated by running the same `cargo deny check` the security workflow runs. A key
+# that was removed is a hard error rather than a warning, which is how this key was found.
 
 [licenses]
 version = 2
@@ -31,16 +40,26 @@ confidence-threshold = 0.9
 # are compatible with it and are used by the dependency tree in practice.
 allow = [
   "Apache-2.0",
-  "Apache-2.0 WITH LLVM-exception",
   "MIT",
-  "BSD-2-Clause",
   "BSD-3-Clause",
   "ISC",
   "Unicode-3.0",
   "Zlib",
-  "MPL-2.0",
   "CC0-1.0",
+  # `webpki-root-certs` carries Mozilla's root certificate bundle as data, and is pulled
+  # in by `rustls-platform-verifier` under the Stellar RPC client's HTTP stack. The
+  # Community Data License Agreement is a permissive licence for *data*, not for code that
+  # executes, and this crate is a table of certificates. It is allowed deliberately and
+  # by name rather than by loosening the policy: `cargo deny check` reported it as
+  # rejected, which is what made the decision visible.
+  "CDLA-Permissive-2.0",
 ]
+# Licences that no crate in the tree uses are not carried as allowances. `cargo deny`
+# warns about each one, which is how the three that were removed here - an LLVM-exception
+# variant, MPL-2.0 and BSD-2-Clause - were found to be unused. The cost is that a licence
+# added by a dependency update fails the check rather than passing on a permission the tree
+# no longer needs, and that is the intended trade: the result is a deliberate decision
+# rather than a list of permissions nobody has asked for.
 exceptions = [
   # `aws-lc-sys` and its bindings are pulled in by a TLS backend and are covered
   # by the same licence family as the rest of the tree.
