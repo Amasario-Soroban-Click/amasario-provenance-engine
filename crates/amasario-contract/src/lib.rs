@@ -72,6 +72,7 @@
 pub mod errors;
 pub mod identity;
 pub mod interface;
+pub mod storage;
 pub mod wasm;
 
 // Re-exported together because they are used together: a caller working with a
@@ -87,6 +88,9 @@ pub use interface::{
     ContractInterface, InterfaceEnum, InterfaceEnumCase, InterfaceEvent, InterfaceEventParam,
     InterfaceField, InterfaceFunction, InterfaceParam, InterfaceStruct, InterfaceUnion,
     InterfaceUnionCase, decode_spec_section, type_name,
+};
+pub use storage::{
+    Durability, StorageEntry, StorageObservation, kind_of, observe_keys, render_scval,
 };
 pub use wasm::{
     CONTRACT_ENV_META_SECTION, CONTRACT_SPEC_SECTION, ImportKind, MAX_DECODED_ENTRIES,
@@ -107,6 +111,7 @@ mod tests {
         assert_eq!(Observedness::Observed.as_str(), "OBSERVED");
         assert_eq!(InstanceModificationKind::Deploy.as_str(), "DEPLOY");
         assert_eq!(CONTRACT_IDENTITY_VERSION, "amasario/contract-identity/v1");
+        assert_eq!(Durability::Persistent.as_str(), "PERSISTENT");
         assert_eq!(SectionKind::Custom.id(), 0);
         assert_eq!(ImportKind::Memory.as_str(), "MEMORY");
         assert_eq!(WASM_MAGIC[0], 0x00);
