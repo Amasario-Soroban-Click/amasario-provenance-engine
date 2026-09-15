@@ -1,0 +1,29 @@
+[package]
+name = "amasario-provenance"
+description = "Provenance analysis for Soroban contracts: source, build, artifact, WASM and deployment identity, matching and verification."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-contract = { workspace = true }
+amasario-core = { workspace = true }
+amasario-network = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+serde_norway = { workspace = true }
+stellar-strkey = { workspace = true }
