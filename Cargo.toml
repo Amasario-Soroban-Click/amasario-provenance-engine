@@ -107,7 +107,7 @@ stellar-rpc-client = "27.0.0"
 # the current protocol revision at its root. `base64` supplies the `from_xdr_base64`
 # decoding the RPC responses need and `serde` supplies the derived impls used by
 # the snapshot format.
-stellar-xdr = { version = "27.0.0", features = ["base64", "serde"] }
+stellar-xdr = { version = "28.0.0", features = ["base64", "serde"] }
 stellar-strkey = "0.0.18"
 
 # -- errors, logging, CLI -----------------------------------------------------
