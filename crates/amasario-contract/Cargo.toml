@@ -1,0 +1,33 @@
+[package]
+name = "amasario-contract"
+description = "Soroban contract inspection: identity, WASM module verification, interface decoding, storage and observed invocations."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+amasario-core = { workspace = true }
+amasario-network = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+stellar-xdr = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+wiremock = { workspace = true }
+# Stellar's own strkey encoder, used so that every address a test builds is a real
+# one rather than a hand-written string whose checksum happens to be absent.
+stellar-strkey = { workspace = true }
