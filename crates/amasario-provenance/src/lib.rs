@@ -38,6 +38,12 @@
 //! routinely contains credentials, and copying them into a snapshot or a log is the
 //! failure mode this crate is written to avoid.
 //!
+//! **An upgrade is not a deployment record of origin.** [`DeploymentKind`] separates
+//! the transaction that created a contract from the one that replaced its executable,
+//! and from not having established which it was. Only the first says where a contract
+//! came from; an upgrade says what it currently is, and a record that did not establish
+//! the difference must not be read as either.
+//!
 //! # What this crate does not claim
 //!
 //! Amasario is not a security scanner. Nothing here is a safety verdict about a
@@ -71,6 +77,7 @@
 
 pub mod artifact;
 pub mod build;
+pub mod deployment;
 pub mod errors;
 pub mod source;
 
@@ -84,6 +91,7 @@ pub use build::{
     BuildProvenance, EnvironmentVariable, REDACTED, Reproducibility, ReproducibilityStatus,
     Toolchain, is_secret_name, sanitise_environment,
 };
+pub use deployment::{DeploymentKind, DeploymentProvenance};
 pub use errors::{ProvenanceFailure, describe as describe_failure, first_failure};
 pub use source::{Repository, Revision, RevisionKind, SourceProvenance, VcsKind};
 
@@ -100,6 +108,7 @@ mod tests {
         assert_eq!(RevisionKind::Commit.as_str(), "COMMIT");
         assert_eq!(ArtifactType::Wasm.as_str(), "WASM");
         assert_eq!(ReproducibilityStatus::Reproduced.as_str(), "REPRODUCED");
+        assert_eq!(DeploymentKind::Deploy.as_str(), "DEPLOY");
         assert_eq!(REDACTED, "<redacted>");
     }
 }
