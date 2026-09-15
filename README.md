@@ -27,8 +27,8 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | Crate | Responsibility | Status |
 | --- | --- | --- |
 | `amasario-core` | Execution context, observation model, relationship semantics, pipeline coordination | implemented, 149 tests (+9 specification-conformance) |
-| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 99 tests |
-| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 104 tests |
+| `amasario-network` | Stellar RPC adapters, pagination, retries, error classification | implemented, 101 tests |
+| `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 110 tests |
 | `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 113 tests |
 | `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 102 tests |
 | `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 107 tests |
@@ -39,7 +39,7 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
 | `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 27 tests |
 
-`cargo test --workspace --all-features` passes **1070 tests**, of which 962 are the unit
+`cargo test --workspace --all-features` passes **1077 tests**, of which 969 are the unit
 and per-crate suites of the twelve crates above and 108 are the nine end-to-end suites
 in `integration-tests` — `network`, `contracts`, `provenance`, `dependencies`, `graphs`,
 `impact`, `snapshots`, `verification` and `reports`. Those suites run against a

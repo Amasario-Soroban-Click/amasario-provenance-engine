@@ -67,6 +67,9 @@ amasario inspect \
 | `--max-nodes <N>` | The most entities a traversal may accumulate. | 10000 |
 | `--max-transactions <N>` | The most transactions to read for invocation evidence. | 16 |
 | `--scan-events` | Scan the contract's events, which is what finds cross-call invocations. | off |
+| `--lookback <LEDGERS>` | How far back an event scan reaches, ending at the boundary. | 256 |
+| `--from-ledger <LEDGER>` | Scan forward from this ledger instead of over a recent window. | unset |
+| `--max-event-pages <N>` | How many event pages the scan may read before it stops and says so. | 10 |
 
 `MAX_PERMITTED_DEPTH` is 32. A larger `--depth` is clamped rather than refused: the
 analysis still runs, and the bound it actually used is the one recorded in the result. A
@@ -77,6 +80,40 @@ answer that reads like a complete one.
 and because a contract with no events has no cross-call history to find. Turning it on is
 what makes a contract-to-contract dependency discoverable rather than only a
 contract-to-WASM one.
+
+### The event horizon, which is the bound that decides whether the answer is useful
+
+`getEvents` is a ledger-ordered feed that paginates by **event count**, not by ledger: one
+request returns as many events as its limit allows from the ledger it starts at, onward.
+That has a consequence a caller has to know about, because it decides what a scan can
+possibly find.
+
+A scan starting at the oldest ledger a node retains spends its page budget on the *oldest*
+events in the retention window - on a public endpoint, the oldest few minutes of seven
+days - and never reaches anything that happened since. `--lookback` therefore anchors the
+window at the **tip**, not at the retention floor, and the default is 256 ledgers, about
+twenty minutes. The window has to be small enough that the page budget can cover it, which
+is why the default is minutes rather than days: under-covering is reported, over-covering
+cannot happen.
+
+```console
+# The default: the most recent ~20 minutes of activity.
+amasario dependencies --contract CABC... --network testnet --scan-events
+
+# A longer horizon. Expect MAX_NODES_REACHED on a busy contract, and read it as
+# "the scan reached back this far", not as "the contract did nothing older".
+amasario dependencies --contract CABC... --network testnet --scan-events \
+  --lookback 17280 --max-event-pages 50
+
+# A deliberate historical window, walked forward from a named ledger.
+amasario dependencies --contract CABC... --network testnet --scan-events \
+  --from-ledger 4000000
+```
+
+A `RATE_LIMITED` or `MAX_NODES_REACHED` truncation therefore does not mean the scan
+failed; it means the scan stopped and told you where. Only `RATE_LIMITED` and `CANCELLED`
+are transient, so only those merit a re-run at the same settings - a wider `--lookback`
+reaches further back, and re-running the same command reaches the same place.
 
 ## Output
 

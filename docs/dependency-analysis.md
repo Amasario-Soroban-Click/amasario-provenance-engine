@@ -5,9 +5,33 @@ layer exists to enforce that: it takes observations, decides what the specificat
 permits them to become, and publishes the remainder as refusals rather than as silence.
 
 ```bash
-amasario dependencies --contract CAAAA...D2KM --network testnet --depth 5
+amasario dependencies --contract CAAAA...D2KM --network testnet --depth 5 --scan-events
 amasario dependencies --contract CAAAA...D2KM --network testnet --format json --pretty
 ```
+
+## `--scan-events` is required for a contract-to-contract edge
+
+Without it the engine reads the contract's identity and its deployment transaction, which
+is enough to establish where the *module* came from and nothing about what the contract
+*calls*. A call between two contracts is only visible in the transaction that made it, and
+finding those transactions means scanning the contract's events for the ones that name it.
+
+So `--scan-events` is not an optimisation. It is the difference between a dependency
+answer and an empty one, and the empty answer says so in as many words: *this is the
+absence of evidence, not evidence of the absence of a dependency*.
+
+### What the scan reads, and why the default is minutes rather than days
+
+An event page carries as many events as its limit allows, starting at the ledger it was
+given and moving forward, so a scan is bounded by **events** and the ledgers it reaches
+are an outcome. That is why the window is anchored at the tip and defaults to about twenty
+minutes: a window small enough that the page budget covers it is a window whose answer
+describes now, and a wide window read from its old edge describes the past. See the event
+horizon section of [cli.md](cli.md) for the flags.
+
+A scan that stops early reports `MAX_NODES_REACHED`, and the right reading of that is
+"this is how far back the evidence reached". Widening `--lookback` or raising
+`--max-event-pages` reaches further; re-running unchanged reaches the same place.
 
 ## The four stages
 
