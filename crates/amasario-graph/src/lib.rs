@@ -1,12 +1,14 @@
-//! Typed dependency and provenance graphs: integrity, cycles, traversal and paths.
+//! Typed dependency and provenance graphs: integrity, cycles, traversal, paths and the
+//! document the specification defines.
 //!
 //! # What this crate is for
 //!
 //! A resolved dependency set answers "what does this contract relate to". A graph answers
 //! the questions that need the relationships *together*: what an entity reaches, what
-//! reaches it, which entities are mutually dependent, and how one entity reaches another.
-//! Those are different questions, and this crate is where they are answered without
-//! re-deriving the relationships or re-deciding what any of them mean.
+//! reaches it, which entities are mutually dependent, how one entity reaches another, and
+//! what can be published as the artifact a consumer reconstructs provenance from. Those are
+//! different questions, and this crate is where they are answered without re-deriving the
+//! relationships or re-deciding what any of them mean.
 //!
 //! It sits above [`amasario_dependency`] and above [`amasario_core`], and it decides
 //! nothing about what a dependency *is*. Every edge carries the dependency record it came
@@ -39,6 +41,13 @@
 //! that could not become dependencies. Dropping them would let a report describe an
 //! analysis as complete when something was observed and refused.
 //!
+//! **A published document is narrower than the graph.** `graph.schema.json` sets
+//! `additionalProperties: false` and gives its edge fewer fields than a dependency record,
+//! so [`GraphDocument`] is a separate, narrower type. It deliberately cannot represent a
+//! full edge, because a type that could would invite a caller to treat the two as
+//! interchangeable - and a dependency's basis cannot be recovered from a document that does
+//! not state one, so reconstructing it would mean inventing it.
+//!
 //! # What this crate does not claim
 //!
 //! Amasario is provenance, dependency and impact infrastructure. It is not a security
@@ -54,7 +63,7 @@
 //!     ObservationBoundary, Relationship,
 //! };
 //! use amasario_dependency::{Candidate, EvidenceRef, Limits, resolve};
-//! use amasario_graph::{Graph, shortest_path, traversal};
+//! use amasario_graph::{Graph, GraphDocument, shortest_path, traversal};
 //!
 //! # fn main() -> amasario_core::Result<()> {
 //! let boundary = ObservationBoundary {
@@ -91,6 +100,14 @@
 //!     shortest_path(&graph, &subject, &callee, Limits::defaults()).map(|path| path.hops()),
 //!     Some(1),
 //! );
+//!
+//! // And the document the specification defines, which a consumer reconstructs from.
+//! let document = GraphDocument::of(&graph);
+//! assert!(document.canonical_json()?.contains("INVOCATES"));
+//! assert_eq!(
+//!     GraphDocument::from_json(&document.canonical_json()?)?,
+//!     document,
+//! );
 //! # Ok(())
 //! # }
 //! ```
@@ -104,6 +121,7 @@ pub mod errors;
 pub mod graph;
 pub mod nodes;
 pub mod paths;
+pub mod serialization;
 pub mod traversal;
 
 // Re-exported together because they are used together: a caller building a graph also
@@ -116,6 +134,7 @@ pub use errors::{GraphFailure, describe as describe_failure, first_failure};
 pub use graph::Graph;
 pub use nodes::{Node, NodeAttributes};
 pub use paths::{DEFAULT_MAX_PATHS, Path, PathSearch, all_paths, all_paths_bounded, shortest_path};
+pub use serialization::{EdgeDocument, GraphDocument, GraphMetadata};
 pub use traversal::{Direction, Reach, Walk, reachable, walk, walk_reverse};
 
 #[cfg(test)]
