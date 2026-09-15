@@ -310,7 +310,7 @@ impl PathTermination {
 }
 
 /// A path from a changed entity to an affected one, with its steps.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImpactPath {
     /// The entities on the path, starting at the changed entity and ending at the
     /// affected one. One more entry than there are steps.
@@ -493,7 +493,7 @@ pub fn path_evidence(steps: &[Step]) -> Vec<EvidenceRef> {
 /// is the bridge, and it deliberately requires the caller to state the status: the
 /// engine must not infer `CONFIRMED` from the presence of a transaction, because
 /// "a transaction exists" and "the transaction succeeded" are different facts.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeploymentRecord {
     /// The deployment's entity reference. Its kind must be `DEPLOYMENT`.
     pub entity: EntityRef,
@@ -550,7 +550,7 @@ impl DeploymentRecord {
 }
 
 /// One statement that a change to some entity may affect another, with its reasoning.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImpactFinding {
     /// The finding's identifier, stable across runs.
     pub id: String,

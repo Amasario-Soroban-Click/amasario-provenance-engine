@@ -40,6 +40,7 @@
 use amasario_core::{ChangePropagation, Confidence, EntityRef, ObservationBoundary, Relationship};
 use amasario_dependency::{Dependency, EvidenceRef};
 use amasario_graph::Graph;
+use serde::{Deserialize, Serialize};
 
 /// Whether a change travelled with the arrow a relationship points along.
 ///
@@ -48,7 +49,8 @@ use amasario_graph::Graph;
 /// change to its object reaches its subject by reading the same edge *inverted*. A
 /// consumer that recorded only the node sequence could not tell which of the two
 /// happened, which is why the path schema requires the direction on every step.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum StepDirection {
     /// The change travelled from the subject to the object, with the arrow.
     Forward,
@@ -79,7 +81,8 @@ impl StepDirection {
 /// when "the changed entity was traversed to its dependents", `DEPENDENCIES` when
 /// "the traversal followed the changed entity's own dependencies", and `BOTH` when both
 /// were followed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ImpactDirection {
     /// The traversal moved towards the entities that depend on the changed one.
     Dependents,
@@ -265,7 +268,7 @@ impl<'a> ImpactContext<'a> {
 /// Deliberately not the graph's [`amasario_graph::Edge`]: an edge is a stable fact about
 /// the graph, while a step is a claim about how a particular analysis moved through it,
 /// including the direction. An edge has no direction because it is not a traversal.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Step {
     /// The entity the step starts at, which is where the change had reached.
     pub source: EntityRef,
