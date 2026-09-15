@@ -18,7 +18,9 @@
 use std::path::PathBuf;
 
 use amasario_contract::DEFAULT_MAX_TRANSACTION_READS;
-use amasario_core::{DEFAULT_MAX_DEPTH, DEFAULT_MAX_NODES, DepthBounds, EngineConfig, Result};
+use amasario_core::{
+    DEFAULT_MAX_DEPTH, DEFAULT_MAX_NODES, DepthBounds, EngineConfig, EngineError, Result,
+};
 use amasario_network::{KnownNetwork, NetworkTarget};
 use clap::{Args, ValueEnum};
 
@@ -40,6 +42,20 @@ pub struct TargetArgs {
     /// Override the Horizon endpoint, which enables deployment resolution.
     #[arg(long, value_name = "URL")]
     pub horizon: Option<String>,
+
+    /// The network's passphrase, for a network the engine has no published identity for.
+    ///
+    /// A local standalone network, a private deployment and a partner environment all
+    /// identify themselves by passphrase, and none of them is one of the three networks
+    /// the engine ships constants for. Supplying the passphrase is what lets the engine
+    /// check that the endpoint really serves that chain, which is the check that would
+    /// otherwise have to be skipped.
+    #[arg(long, value_name = "PASSPHRASE", requires = "network_name")]
+    pub passphrase: Option<String>,
+
+    /// The name to record for a custom network. Defaults to `custom`.
+    #[arg(long = "network-name", value_name = "NAME", requires = "passphrase")]
+    pub network_name: Option<String>,
 }
 
 impl TargetArgs {
@@ -52,14 +68,27 @@ impl TargetArgs {
     /// endpoint and none was supplied. Mainnet is the case that makes the second matter:
     /// SDF publishes no default endpoint for it, so pretending otherwise would produce a
     /// mysterious transport error instead of a clear one.
+    ///
+    /// When `--passphrase` is supplied the network is resolved as a custom one instead:
+    /// the passphrase identifies the chain and the endpoints are whatever was supplied.
+    /// `--rpc` is then required, because a custom network has no published default.
     pub fn resolve(&self) -> Result<NetworkTarget> {
+        let config = EngineConfig::default();
+
+        if let Some(passphrase) = &self.passphrase {
+            let name = self.network_name.as_deref().unwrap_or("custom");
+            let rpc = self.rpc.as_deref().ok_or_else(|| {
+                EngineError::Configuration(
+                    "--passphrase names a network the engine has no published endpoint for, so \
+                     --rpc is required"
+                        .to_owned(),
+                )
+            })?;
+            return NetworkTarget::custom(name, passphrase, rpc, self.horizon.as_deref(), &config);
+        }
+
         let known: KnownNetwork = self.network.parse()?;
-        NetworkTarget::resolve(
-            known,
-            self.rpc.as_deref(),
-            self.horizon.as_deref(),
-            &EngineConfig::default(),
-        )
+        NetworkTarget::resolve(known, self.rpc.as_deref(), self.horizon.as_deref(), &config)
     }
 }
 
@@ -302,6 +331,61 @@ mod tests {
             .engine_config()
             .expect("a valid configuration");
         assert_eq!(config.bounds.max_depth, 3);
+    }
+
+    #[test]
+    fn a_custom_network_is_identified_by_its_passphrase() {
+        // A local standalone network identifies itself by passphrase, and it is not one of
+        // the three the engine ships constants for. Supplying the passphrase is what lets
+        // the network identity check run instead of being skipped.
+        let harness = parse(&[
+            "--contract",
+            "CABC",
+            "--passphrase",
+            "Standalone Network ; February 2017",
+            "--network-name",
+            "local",
+            "--rpc",
+            "http://localhost:8000/soroban/rpc",
+        ]);
+        let target = harness.target.resolve().expect("a custom network resolves");
+        assert_eq!(
+            target.network().passphrase,
+            "Standalone Network ; February 2017"
+        );
+        assert_eq!(target.network().id, "local");
+        assert_eq!(target.rpc().as_str(), "http://localhost:8000/soroban/rpc");
+    }
+
+    #[test]
+    fn a_custom_network_without_an_endpoint_is_refused() {
+        // A custom network has no published default endpoint, so a run without one would
+        // have nowhere to observe and must fail with the argument that caused it.
+        let harness = parse(&[
+            "--contract",
+            "CABC",
+            "--passphrase",
+            "Standalone Network ; February 2017",
+            "--network-name",
+            "local",
+        ]);
+        let error = harness
+            .target
+            .resolve()
+            .expect_err("an endpoint is required");
+        assert_eq!(
+            error.category(),
+            amasario_core::ErrorCategory::Configuration
+        );
+        assert!(error.to_string().contains("--rpc"), "got: {error}");
+    }
+
+    #[test]
+    fn a_passphrase_without_a_network_name_is_a_usage_error() {
+        // The two flags describe one thing, so half of it is not an option.
+        let parsed =
+            Harness::try_parse_from(["amasario", "--contract", "CABC", "--passphrase", "x"]);
+        assert!(parsed.is_err(), "--passphrase alone must be rejected");
     }
 
     #[test]
