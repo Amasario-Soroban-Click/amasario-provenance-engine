@@ -1,0 +1,25 @@
+[package]
+name = "amasario-snapshot-fuzzer"
+description = "Fuzzes snapshot decoding, canonicalisation, digests and comparison."
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "snapshot-fuzzer"
+path = "src/main.rs"
+test = false
+doc = false
+bench = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+amasario-core = { path = "../../crates/amasario-core" }
+amasario-snapshot = { path = "../../crates/amasario-snapshot" }
+
+[lints.rust]
+unsafe_code = "forbid"

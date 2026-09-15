@@ -1,0 +1,27 @@
+[package]
+name = "amasario-graph-fuzzer"
+description = "Fuzzes graph assembly, traversal, path search and cycle detection."
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "graph-fuzzer"
+path = "src/main.rs"
+test = false
+doc = false
+bench = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = "1"
+
+amasario-core = { path = "../../crates/amasario-core" }
+amasario-dependency = { path = "../../crates/amasario-dependency" }
+amasario-graph = { path = "../../crates/amasario-graph" }
+
+[lints.rust]
+unsafe_code = "forbid"

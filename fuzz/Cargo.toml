@@ -1,0 +1,22 @@
+# A workspace of its own, deliberately detached from the engine's.
+#
+# The five targets need `libfuzzer-sys`, which links a C++ fuzzing runtime and is built
+# with a sanitizer under `cargo fuzz`. Keeping them in a separate workspace means the
+# engine's `cargo test --workspace` stays a plain, fast, stable-toolchain build, and a
+# fuzzer cannot accidentally become a dependency of a published crate. The targets each
+# depend on the engine crates by path, so they exercise the same source the tests do.
+#
+# Usage:
+#   cargo fuzz run <target>          # with cargo-fuzz installed
+#   cargo build --workspace          # from this directory, to check they compile
+#
+# See `docs/fuzzing.md` for what each target explores and how a failure is read.
+[workspace]
+resolver = "3"
+members = [
+  "provenance-fuzzer",
+  "dependency-fuzzer",
+  "graph-fuzzer",
+  "impact-fuzzer",
+  "snapshot-fuzzer",
+]
