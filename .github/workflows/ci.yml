@@ -25,10 +25,25 @@ env:
 
 jobs:
   check:
-    name: format · clippy · test · doc
+    name: format · clippy · test · doc · conformance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # The normative specification, checked out so that the conformance test has
+      # something to compare the engine's vocabularies against. Without it the
+      # engine's claim to *consume* the specification would be an assertion rather
+      # than a check.
+      #
+      # A private specification repository additionally needs a token with read
+      # access to it; `github.token` covers the public case, which is what a public
+      # engine requires.
+      - name: Check out the normative specification
+        uses: actions/checkout@v5
+        with:
+          repository: Amasario-Soroban-Click/amasario-provenance-spec
+          ref: main
+          path: .amasario-spec
 
       - name: Install the pinned toolchain
         run: rustup show
@@ -43,6 +58,14 @@ jobs:
 
       - name: Tests
         run: cargo test --all-features
+
+      # The conformance checks are ignored by default because they need the
+      # specification checkout, which this job provides. Running them here is what
+      # makes the comparison enforced rather than merely available.
+      - name: Specification conformance
+        env:
+          AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
+        run: cargo test -p amasario-core --all-features -- --include-ignored
 
       - name: Documentation builds without warnings
         run: cargo doc --no-deps --document-private-items
