@@ -71,6 +71,7 @@
 
 pub mod errors;
 pub mod identity;
+pub mod interface;
 pub mod wasm;
 
 // Re-exported together because they are used together: a caller working with a
@@ -81,6 +82,11 @@ pub use errors::{InspectionFailure, describe, first_failure};
 pub use identity::{
     CONTRACT_IDENTITY_VERSION, ContractExecutableKind, ContractIdentity, InstanceModification,
     InstanceModificationKind, Observedness, digest_from_hash_bytes,
+};
+pub use interface::{
+    ContractInterface, InterfaceEnum, InterfaceEnumCase, InterfaceEvent, InterfaceEventParam,
+    InterfaceField, InterfaceFunction, InterfaceParam, InterfaceStruct, InterfaceUnion,
+    InterfaceUnionCase, decode_spec_section, type_name,
 };
 pub use wasm::{
     CONTRACT_ENV_META_SECTION, CONTRACT_SPEC_SECTION, ImportKind, MAX_DECODED_ENTRIES,
