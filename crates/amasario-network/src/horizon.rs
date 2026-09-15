@@ -170,12 +170,20 @@ impl HorizonSession {
 
     /// Builds a URL under the endpoint's root.
     ///
+    /// The path's leading slash is optional and is dropped before the join. Without
+    /// that, a caller that wrote `\"/accounts/G.../transactions\"` - which is how Horizon
+    /// documents the route - would produce `base//accounts/...`, and a double slash is
+    /// not the same route: a server that does not normalise it answers `404`, which the
+    /// adapter would otherwise report as an absent resource rather than as the URL
+    /// mistake it is.
+    ///
     /// # Errors
     ///
     /// Returns [`EngineError::Network`] when the endpoint and path do not join into
     /// a valid URL, which can only happen if the endpoint was configured unusually.
     fn url(&self, path: &str, query: &[(&str, String)]) -> Result<Url> {
         let base = self.endpoint.as_str().trim_end_matches('/');
+        let path = path.trim_start_matches('/');
         let mut url = Url::parse(&format!("{base}/{path}")).map_err(|error| {
             EngineError::permanent_network(
                 self.endpoint.as_str(),
@@ -354,8 +362,23 @@ impl HorizonSession {
             query.push(("cursor", cursor.to_owned()));
         }
 
+        // A page the endpoint reports as absent is **not** an empty page. Collapsing the
+        // two would turn "this collection does not exist" into "this account has no
+        // history", which reads as a complete result and is the single most misleading
+        // thing the network layer could do. Only a success with an empty `records` array
+        // means the collection is empty.
         let page: Option<Collection<T>> = self.get(cancellation, path, &query).await?;
-        Ok(page.map(|page| page.embedded.records).unwrap_or_default())
+        let page = page.ok_or_else(|| {
+            errors::classify_status(
+                self.endpoint.as_str(),
+                404,
+                &format!(
+                    "the endpoint reports no collection at {path}; an absent page is not an \
+                     empty one"
+                ),
+            )
+        })?;
+        Ok(page.embedded.records)
     }
 }
 
