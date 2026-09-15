@@ -5,8 +5,14 @@
 //! The specification forbids inferring a dependency from anything except evidence:
 //! not from two projects mentioning each other, not from two contracts existing in the
 //! same ecosystem, not from similar metadata. This crate is where that prohibition is
-//! enforced, and it does it in steps that can each refuse. This first step is the
-//! classifier, which decides what a candidate may be called.
+//! enforced, and it does it in steps that can each refuse:
+//!
+//! 1. [`detector`] turns observations into [`Candidate`]s and reports what it set
+//!    aside, so "no dependency found" and "nothing usable was observed" stay distinct.
+//! 2. [`classifier`] decides what each candidate is allowed to be called, checking the
+//!    class's required evidence, and refuses the rest by name.
+//! 3. [`resolver`] merges repeated observations of one edge conservatively and
+//!    assembles a [`DependencySet`], recording refusals rather than dropping them.
 //!
 //! # The distinctions this crate exists to preserve
 //!
@@ -39,7 +45,7 @@
 //!     Basis, EntityKind, EntityRef, LedgerSequence, Network, NetworkType, ObservationBoundary,
 //!     Relationship,
 //! };
-//! use amasario_dependency::{Candidate, EvidenceRef, classify};
+//! use amasario_dependency::{Candidate, EvidenceRef, classify, resolve};
 //!
 //! # fn main() -> amasario_core::Result<()> {
 //! let boundary = ObservationBoundary {
@@ -55,11 +61,15 @@
 //!     Basis::ObservedInvocation,
 //!     vec![EvidenceRef::new(amasario_core::EvidenceType::Transaction, "ab".repeat(32))?],
 //! )?
-//! .observed_at(boundary)
+//! .observed_at(boundary.clone())
 //! .with_outcome(Some(true));
 //!
 //! let classification = classify(&candidate)?;
 //! assert!(classification.is_observed());
+//!
+//! let set = resolve(candidate.subject.clone(), Some(boundary), &[candidate], 5)?;
+//! assert_eq!(set.len(), 1);
+//! assert!(set.unestablished.is_empty());
 //! # Ok(())
 //! # }
 //! ```
@@ -68,7 +78,9 @@
 #![deny(unsafe_code)]
 
 pub mod classifier;
+pub mod detector;
 pub mod errors;
+pub mod resolver;
 
 // Re-exported together because they are used together: a caller classifying an
 // observation needs the failure model that says why a candidate could not be
@@ -77,7 +89,12 @@ pub mod errors;
 pub use classifier::{
     Candidate, Classification, EvidenceRef, classes_for, classify, why_not_a_dependency,
 };
+pub use detector::{
+    DeclaredDependency, DetectionReport, SkipReason, SkippedObservation, detect_from_declared,
+    detect_from_invocations, is_transaction_hash, transaction_of,
+};
 pub use errors::{DependencyFailure, describe as describe_failure, first_failure};
+pub use resolver::{Cycle, Dependency, DependencySet, Unestablished, resolve, weakest_status};
 
 #[cfg(test)]
 mod tests {
@@ -86,6 +103,7 @@ mod tests {
 
     #[test]
     fn the_vocabulary_is_reachable_from_the_crate_root() {
+        assert_eq!(SkipReason::TopLevelInvocation.as_str(), "TOP_LEVEL_INVOCATION");
         // A consumer should not have to know which module a concept lives in to name
         // it. A re-export that went missing would otherwise be a breaking change
         // discovered downstream rather than here.
