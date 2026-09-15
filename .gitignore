@@ -1,6 +1,17 @@
 # Build output.
 /target/
 
+# The normative specification, checked out into the workspace root. CI clones
+# `amasario-provenance-spec` to this path so that the conformance tests in
+# `amasario-core` have something to compare the engine's vocabularies against, and
+# the tests read the same path locally through `AMASARIO_SPEC_DIR`. It is a second
+# repository rather than part of this one, so it must never be committed here.
+#
+# No trailing slash, deliberately: that form matches directories only, and Git
+# treats a symlink as a file. CI produces a directory and a local setup may well
+# symlink one, so the rule has to match both.
+/.amasario-spec
+
 # Cargo.lock is committed deliberately: the engine is an application as well as a
 # library set, so a build must not resolve a different version graph than the one
 # that was reviewed and audited.
