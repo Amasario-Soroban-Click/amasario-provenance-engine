@@ -5,8 +5,8 @@ This page is the practical path from a checkout to an analysis of a real contrac
 ## Before anything: install and build
 
 ```bash
-scripts/install.sh          # installs the toolchain components and builds
-scripts/test-testnet.sh <CONTRACT_ID> testnet
+scripts/install.sh     # installs the toolchain components and builds the workspace
+scripts/test-testnet.sh # analyses the committed live target and asserts the result
 ```
 
 `scripts/install.sh` builds the workspace and `scripts/install.ps1` does the same on
@@ -64,14 +64,34 @@ anyway — see [snapshots.md](snapshots.md).
 ## The smoke test
 
 ```bash
-scripts/test-testnet.sh <CONTRACT_ID> [network]
+scripts/test-testnet.sh                    # the committed target, on testnet
+scripts/test-testnet.sh <CONTRACT_ID> testnet
 ```
 
-This is a smoke test, not a test suite. It proves the CLI reaches a real endpoint, that the
-network identity check passes against the chain it was pointed at, and that each command
-renders. Its outputs are **not asserted**: a live network is not deterministic, and
-asserting them would either fail constantly or assert nothing. Deterministic assertions
-belong to the fixture corpus — see [ci-integration.md](ci-integration.md).
+With no arguments the script analyses the contract named in `scripts/live-target.env` — a
+Soroban market that both *is* called and *makes* calls to another contract in ordinary
+activity, which is the smallest real case that exercises observation, cross-contract call
+recovery, dependency classification, evidence, confidence and impact end to end. The
+scheduled workflow reads the same file, so there is one place that says what is tested.
+
+The script asserts, rather than only running. It checks the documents each command
+produces for the properties that must hold for any successful analysis of a reachable
+contract — every dependency edge carries evidence, a basis, a confidence level and an
+observation boundary, and each status is drawn from the specification's taxonomy — and for
+the one property that must hold for the committed target: that a contract which calls
+another contract yields at least one verified `INVOCATES` edge.
+
+What it deliberately does **not** assert is anything a live network changes under it: a
+ledger number, a transaction hash, an event count, or the identity of any dependency.
+Those belong to the fixture corpus, where they are deterministic — see
+[ci-integration.md](ci-integration.md). A live assertion that pinned them would fail for
+reasons unrelated to the change under review, which is how a live test becomes one people
+learn to ignore.
+
+The one assertion that depends on the world is the verified edge. If the target stops
+being called the script fails with a message saying so, and the fix is to widen
+`AMASARIO_LOOKBACK` or name a busier contract in `scripts/live-target.env`. That failure
+is the test doing its job.
 
 It performs only read-only analysis. Nothing it runs has a mutating mode to submit a
 transaction with.
@@ -80,8 +100,10 @@ Environment:
 
 | Variable | Meaning |
 | --- | --- |
-| `AMASARIO_BIN` | The binary to run. Defaults to the workspace build, then `PATH`. |
+| `AMASARIO_BIN` | The binary to run. Defaults to the release build, then the debug build, then `PATH`. |
 | `AMASARIO_RPC` | The RPC endpoint, which `mainnet` and `futurenet` need. |
+| `AMASARIO_ARTIFACTS` | Where the outputs are written. Unset, they go to a temporary directory that is removed on exit. |
+| `AMASARIO_LOOKBACK` | How many ledgers of history the event scan covers. Defaults to the CLI's 256, about a day. |
 
 ## Local and private chains
 
