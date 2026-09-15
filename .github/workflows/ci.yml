@@ -1,0 +1,51 @@
+name: CI
+
+# The full gate. The other workflows are focused subsets of this one, so a
+# contributor who runs `cargo lint`, `cargo test-all` and
+# `cargo fmt --all -- --check` locally has run what this job runs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# No secrets: the engine reads public network data and holds no credentials, and
+# the workflow permission block is what keeps that true as steps are added.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # A warning that CI tolerates is a warning nobody fixes.
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    name: format · clippy · test · doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests
+        run: cargo test --all-features
+
+      - name: Documentation builds without warnings
+        run: cargo doc --no-deps --document-private-items
+
+      - name: Documentation examples compile
+        run: cargo test --doc

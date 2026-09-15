@@ -1,0 +1,36 @@
+[package]
+name = "amasario-core"
+description = "Execution context, observation model, relationship semantics and pipeline coordination for the Amasario provenance engine."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+time = { workspace = true }
+url = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+serde_norway = { workspace = true }
+# Stellar's own strkey implementation, used as an independent oracle in the
+# identity tests. The engine decodes strkeys by hand rather than depending on this
+# crate at runtime, so the tests cross-check the hand-written decoder against the
+# authoritative encoder instead of against itself.
+stellar-strkey = { workspace = true }

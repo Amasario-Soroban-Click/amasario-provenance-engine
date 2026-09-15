@@ -1,0 +1,19 @@
+# Cargo configuration for every workspace member.
+#
+# The settings here exist so that a local build behaves like a CI build. A warning
+# that CI rejects but a local build tolerates is a warning nobody fixes, so
+# `-D warnings` is on for every profile rather than only for the pipeline.
+
+[build]
+rustflags = ["-D", "warnings"]
+
+[alias]
+# Fixed commands, so a contributor runs what CI runs rather than assembling the
+# sequence from memory.
+lint = "clippy --all-targets --all-features -- -D warnings"
+format-check = "fmt --all -- --check"
+test-all = "test --all-features"
+
+[term]
+verbose = false
+color = "auto"

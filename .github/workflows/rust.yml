@@ -1,0 +1,71 @@
+name: Rust
+
+# A build matrix rather than a single job, because the crate graph is a library
+# set that other tooling links against, and a platform-specific compilation failure
+# in a leaf crate is exactly the kind of defect that a single-target CI misses until
+# a user reports it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
+      - name: Build
+        run: cargo build --all-features --verbose
+
+      - name: Test
+        run: cargo test --all-features
+
+  msrv:
+    name: minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The workspace declares `rust-version`, so the claim is checked rather than
+      # documented. A crate that quietly starts requiring a newer compiler is a
+      # breaking change for anyone on the declared minimum.
+      #
+      # An explicit `+toolchain` override is used rather than `rustup default`,
+      # because `rust-toolchain.toml` takes precedence over the default and would
+      # otherwise make this job silently build with the pinned toolchain - a check
+      # that always passes because it is not running.
+      - name: Install the declared minimum toolchain
+        run: |
+          version="$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)"
+          echo "checking against rust-version = ${version}"
+          rustup toolchain install "${version}" --profile minimal
+
+      - name: Build against the declared minimum
+        run: |
+          version="$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)"
+          cargo "+${version}" build --all-features

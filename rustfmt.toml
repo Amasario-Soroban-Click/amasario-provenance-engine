@@ -1,0 +1,13 @@
+# Formatting is checked in CI, so these settings are part of the build contract
+# rather than a matter of taste. Only stable options are listed: rustfmt warns and
+# ignores unstable ones, and a configuration file that prints warnings on every run
+# trains people to skim its output.
+edition = "2024"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+newline_style = "Unix"
+use_small_heuristics = "Default"
+reorder_imports = true
+reorder_modules = true
+match_block_trailing_comma = true

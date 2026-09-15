@@ -1,0 +1,70 @@
+# Dependency policy, enforced by `cargo deny check`.
+#
+# The engine talks to a public network and parses untrusted input, so the
+# dependency surface is a security boundary rather than a convenience. Every rule
+# here is checkable; none of it is advice.
+
+[graph]
+targets = [
+  { triple = "x86_64-unknown-linux-gnu" },
+  { triple = "aarch64-unknown-linux-gnu" },
+  { triple = "x86_64-pc-windows-msvc" },
+  { triple = "aarch64-apple-darwin" },
+  { triple = "wasm32-unknown-unknown" },
+]
+all-features = false
+no-default-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+# An unmaintained dependency is surfaced rather than suppressed. If one has to be
+# accepted, it belongs here with a reason and a removal condition.
+unmaintained = "workspace"
+severity-threshold = "low"
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+# Apache-2.0 is the engine's own licence; the rest are permissive licences that
+# are compatible with it and are used by the dependency tree in practice.
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "Zlib",
+  "MPL-2.0",
+  "CC0-1.0",
+]
+exceptions = [
+  # `aws-lc-sys` and its bindings are pulled in by a TLS backend and are covered
+  # by the same licence family as the rest of the tree.
+  { allow = ["ISC", "OpenSSL"], name = "aws-lc-sys" },
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Duplicate versions are widespread in the async ecosystem and blocking on them
+# would stop legitimate security patches from landing. They are warned on so a
+# reviewer sees them, and skipped where a duplicate is known to be unavoidable.
+skip = []
+skip-tree = [
+  # Proc-macro and build-time duplicates that cannot appear in the analysis path.
+  { name = "syn", depth = 4 },
+  { name = "windows-sys", depth = 4 },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# No git dependencies: a commit hash is not a version, and the specification
+# takes the position that a revision is only meaningful when it is immutable and
+# published.
+allow-git = []

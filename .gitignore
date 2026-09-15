@@ -1,0 +1,32 @@
+# Build output.
+/target/
+
+# Cargo.lock is committed deliberately: the engine is an application as well as a
+# library set, so a build must not resolve a different version graph than the one
+# that was reviewed and audited.
+
+# Editor and OS noise.
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/*.log
+
+# Analysis output. The engine writes reports and snapshots where the caller asks;
+# a stray one in the working tree must not be committed by accident.
+/out/
+/artifacts/
+*.snapshot.json
+
+# Coverage and profiling output.
+/coverage/
+*.profraw
+*.profdata
+/criterion/
+
+# Fuzzing corpus. The interesting cases belong in `fuzz/<target>/corpus`, which is
+# committed; libFuzzer's own accumulated corpus is not, because it is machine-state
+# rather than a reviewable artefact.
+fuzz/artifacts/
+fuzz/coverage/
+fuzz/target/

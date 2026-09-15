@@ -1,0 +1,124 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/amasario-core",
+]
+
+# Lint policy for every member. `[lints] workspace = true` in a crate manifest is
+# what applies it, so a crate that forgot to opt in is visible in its manifest
+# rather than silently unlinted.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+# Priorities are stated explicitly because two lint groups at the same priority are
+# a hard error: Cargo refuses an ambiguous precedence rather than picking one.
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+
+[workspace.lints.clippy]
+# `all` covers correctness, suspicious, style, complexity and performance. These
+# are the lints whose advice is right almost always, so they are errors.
+all = { level = "warn", priority = -1 }
+# Pedantic lints that matter for this codebase specifically: analysis results must
+# be reproducible, so anything that could hide a value behind a `Debug`-only
+# representation or shadow a variable is worth failing on.
+allow_attributes_without_reason = "warn"
+missing_const_for_fn = "warn"
+redundant_clone = "warn"
+
+[workspace.package]
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/Amasario-Soroban-Click/amasario-provenance-engine"
+homepage = "https://github.com/Amasario-Soroban-Click/amasario-provenance-engine"
+authors = ["Amasario contributors"]
+keywords = ["stellar", "soroban", "provenance", "dependency-analysis", "impact-analysis"]
+categories = ["command-line-utilities", "development-tools", "cryptography::cryptocurrencies"]
+
+[workspace.dependencies]
+# -- internal -----------------------------------------------------------------
+# Pinned to the workspace version so a crate cannot depend on a differently
+# versioned sibling without the manifest disagreeing.
+amasario-contract = { path = "crates/amasario-contract", version = "1.0.0" }
+amasario-core = { path = "crates/amasario-core", version = "1.0.0" }
+amasario-dependency = { path = "crates/amasario-dependency", version = "1.0.0" }
+amasario-evidence = { path = "crates/amasario-evidence", version = "1.0.0" }
+amasario-export = { path = "crates/amasario-export", version = "1.0.0" }
+amasario-graph = { path = "crates/amasario-graph", version = "1.0.0" }
+amasario-impact = { path = "crates/amasario-impact", version = "1.0.0" }
+amasario-network = { path = "crates/amasario-network", version = "1.0.0" }
+amasario-provenance = { path = "crates/amasario-provenance", version = "1.0.0" }
+amasario-report = { path = "crates/amasario-report", version = "1.0.0" }
+amasario-snapshot = { path = "crates/amasario-snapshot", version = "1.0.0" }
+
+# -- serialisation ------------------------------------------------------------
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
+# `serde_yaml` is unmaintained, and `serde_yml` is a fork that has not attracted
+# the maintenance its predecessor lost. `serde_norway` is the maintained
+# continuation of the original codebase, which matters for a parser that reads
+# contributor-authored documents.
+serde_norway = "0.9.42"
+
+# -- async runtime and HTTP ---------------------------------------------------
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "time", "signal"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls-tls"] }
+futures = "0.3.34"
+
+# -- Stellar ------------------------------------------------------------------
+# `stellar-rpc-client` is the Stellar organisation's own RPC client, so the
+# engine speaks the protocol the network actually implements rather than a
+# locally invented approximation. `stellar-xdr` and `stellar-strkey` come from
+# the same organisation and cover XDR decoding and strkey encoding, both of which
+# are protocol facts the engine must not reimplement.
+stellar-rpc-client = "27.0.0"
+stellar-xdr = { version = "28.0.0", features = ["base64", "curr"] }
+stellar-strkey = "0.0.18"
+
+# -- errors, logging, CLI -----------------------------------------------------
+thiserror = "2.0.20"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+clap = { version = "4.6.7", features = ["derive", "env", "wrap_help"] }
+
+# -- hashing and encodings ----------------------------------------------------
+sha2 = "0.11.0"
+hex = "0.4.3"
+base64 = "0.23.1"
+
+# -- graph --------------------------------------------------------------------
+petgraph = "0.8.3"
+
+# -- miscellaneous ------------------------------------------------------------
+url = "2.5.8"
+regex = "1.13.1"
+once_cell = "1.21.4"
+humantime = "2.4.0"
+time = { version = "0.3.45", features = ["parsing", "formatting", "macros"] }
+futures-retry = "0.6.0"
+
+# -- dev ----------------------------------------------------------------------
+tokio-test = "0.4.5"
+tempfile = "3.27.0"
+proptest = "1.11.0"
+criterion = { version = "0.8.2", features = ["async_tokio"] }
+assert_cmd = "2.2.2"
+predicates = "3.1.4"
+wiremock = "0.6.5"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+
+# Fuzzing needs the same optimisation as release but keeps debug assertions on, so
+# a fuzz run catches both undefined behaviour and violated invariants.
+[profile.fuzz]
+inherits = "release"
+debug-assertions = true

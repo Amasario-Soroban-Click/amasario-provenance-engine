@@ -1,0 +1,31 @@
+# Clippy thresholds are set here rather than per-site so that a lint cannot be
+# silenced at the call site without a reviewer noticing the configuration change.
+
+# Analysis walks typed graphs whose depth is bounded by configuration, and the
+# recursive helpers that do it are clearer than an explicit worklist at these
+# depths. The bound is enforced by the caller, not by trust.
+too-many-arguments-threshold = 8
+type-complexity-threshold = 300
+
+# A provenance chain legitimately carries many optional fields; a large struct is
+# the honest representation of "almost everything here is optional".
+too-many-lines-threshold = 200
+
+# The engine passes explicit context rather than reading ambient state, so
+# functions take a context parameter that is often unused by simple helpers.
+avoid-breaking-exported-api = false
+
+# `#[must_use]` is required on anything that returns a `Result` in this codebase,
+# because a silently dropped error is exactly the failure mode the specification
+# forbids: a network failure must never be converted into an empty result.
+disallowed-methods = [
+  { path = "std::process::exit", reason = "exit codes are decided by the CLI entry point so that library code stays testable" },
+]
+
+# Deterministic ordering matters more than allocation count here, so the
+# `HashMap` lints are disabled in favour of an explicit rule: the engine uses
+# `BTreeMap`/`BTreeSet` for anything that reaches output. See `docs/architecture.md`.
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "iteration order must be deterministic; use BTreeMap for anything that reaches output" },
+  { path = "std::collections::HashSet", reason = "iteration order must be deterministic; use BTreeSet for anything that reaches output" },
+]
