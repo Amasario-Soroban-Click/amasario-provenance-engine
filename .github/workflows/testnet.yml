@@ -4,11 +4,20 @@ name: Testnet
 # network is not deterministic, so a failure here means either that something broke or
 # that testnet was reset, and nothing in the workflow can tell the two apart for you.
 #
-# It runs on a schedule and on demand rather than on every pull request, and it asserts
-# nothing about the analysis output - only that the commands reach a real endpoint, that
-# the chain is identified, and that they render. What it catches is the class of defect a
-# mock cannot: an endpoint that moved, a response shape that changed, a passphrase that
-# was transcribed wrongly.
+# It runs on a schedule and on demand rather than on every pull request. It *does* assert
+# the analysis: `scripts/test-testnet.sh` checks the documents the commands produce for
+# the properties that must hold for any successful run, and for the one property that
+# must hold for the committed target - that a contract which calls another contract
+# yields at least one verified `INVOCATES` edge. What it deliberately does not assert is
+# anything a live network changes under it: a ledger number, a transaction hash, an event
+# count, a dependency's identity. What it catches is the class of defect a mock cannot:
+# an endpoint that moved, a response shape that changed, a passphrase transcribed
+# wrongly, or - the reason this test exists at all - the cross-contract call recovery
+# quietly returning nothing while every mocked suite stayed green.
+#
+# The target is committed in `scripts/live-target.env` rather than required from a
+# repository variable. The variable was never set, so this job used to print a notice and
+# succeed without analysing anything: a scheduled green run that checked nothing.
 on:
   schedule:
     # 06:00 UTC on Mondays, so a drift is noticed at the start of a week rather than
@@ -17,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       contract:
-        description: The contract to analyse. Defaults to the repository variable.
+        description: The contract to analyse. Defaults to the committed live target.
         required: false
         type: string
       network:
@@ -52,43 +61,32 @@ jobs:
       - name: Build the CLI
         run: cargo build --release -p amasario-cli
 
-      - name: Decide whether there is a contract to analyse
-        id: target
-        env:
-          # A repository variable rather than a secret: a contract address on a public
-          # network is public, and putting it in a secret would imply otherwise.
-          VARIABLE_CONTRACT: ${{ vars.AMASARIO_TESTNET_CONTRACT }}
-          INPUT_CONTRACT: ${{ inputs.contract }}
-        run: |
-          set -euo pipefail
-          contract="${INPUT_CONTRACT:-${VARIABLE_CONTRACT}}"
-          if [ -z "${contract}" ]; then
-            echo "::notice title=No contract configured::Set the repository variable \
-          AMASARIO_TESTNET_CONTRACT (or dispatch with a contract) to run this smoke test."
-            echo "run=false" >> "${GITHUB_OUTPUT}"
-          else
-            echo "contract=${contract}" >> "${GITHUB_OUTPUT}"
-            echo "run=true" >> "${GITHUB_OUTPUT}"
-          fi
-
       - name: Smoke test
-        if: steps.target.outputs.run == 'true'
         env:
           AMASARIO_BIN: ${{ github.workspace }}/target/release/amasario
+          # Kept so the run is inspectable rather than only pass/fail. Without this the
+          # script's scratch directory is removed on exit and the upload below would
+          # find nothing, which is what the previous version of this job did.
+          AMASARIO_ARTIFACTS: ${{ github.workspace }}/artifacts
+          # A dispatch may name another contract. An empty value falls through to the
+          # committed target, so the scheduled run never depends on an input.
+          DISPATCH_CONTRACT: ${{ inputs.contract }}
         run: |
           set -euo pipefail
           network="${{ inputs.network }}"
-          "${GITHUB_WORKSPACE}/scripts/test-testnet.sh" "${{ steps.target.outputs.contract }}" "${network:-testnet}"
+          if [ -n "${DISPATCH_CONTRACT}" ]; then
+            "${GITHUB_WORKSPACE}/scripts/test-testnet.sh" "${DISPATCH_CONTRACT}" "${network:-testnet}"
+          else
+            "${GITHUB_WORKSPACE}/scripts/test-testnet.sh" "" "${network:-testnet}"
+          fi
 
       - name: Upload the artifacts
-        if: always() && steps.target.outputs.run == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: testnet-smoke
-          path: |
-            report.md
-            graph.dot
-          if-no-files-found: ignore
+          path: artifacts/
+          if-no-files-found: warn
 
   # A network that answers with the wrong passphrase must be refused. That check is the
   # reason a wrong endpoint produces a clear error rather than an analysis of a chain
