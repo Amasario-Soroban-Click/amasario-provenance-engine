@@ -385,6 +385,40 @@ impl ContractId {
     /// it and rejects a corrupted variant, which is what makes the constant
     /// checkable rather than asserted.
     pub fn verify_checksum(&self) -> Result<()> {
+        self.decode_payload().map(|_| ())
+    }
+
+    /// The 32-byte contract identifier the address encodes.
+    ///
+    /// Needed because Stellar RPC addresses a contract by its raw identifier:
+    /// building a `LedgerKey` for a contract needs the bytes, not the strkey. The
+    /// checksum is verified first, so a corrupt address is reported rather than
+    /// silently used to query a different contract - which would return an absent
+    /// entry, indistinguishable from a contract that does not exist. That
+    /// distinction is exactly what the engine must not lose, so the decoding and
+    /// the verification happen together rather than being two independent calls a
+    /// caller could forget to pair.
+    ///
+    /// Decoding lives here rather than in `amasario-network` because this type
+    /// owns identity: a second decoder in the network layer would be a second
+    /// place for the version byte to be wrong.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError::Validation`] when the address is not decodable
+    /// base32, decodes to the wrong length, has the wrong version byte, or fails
+    /// its checksum.
+    pub fn payload(&self) -> Result<[u8; 32]> {
+        let payload = self.decode_payload()?;
+        let mut bytes = [0_u8; 32];
+        // The length is already known to be 35 and the version byte to be correct,
+        // so the identifier is the 32 bytes between the version and the checksum.
+        bytes.copy_from_slice(&payload[1..33]);
+        Ok(bytes)
+    }
+
+    /// Decodes the strkey payload, verifying its version byte and CRC16 checksum.
+    fn decode_payload(&self) -> Result<Vec<u8>> {
         // strkey payload is the version byte, then 32 bytes of contract identifier,
         // then a big-endian CRC16/XMODEM over everything preceding it.
         const VERSION_BYTE: u8 = 0x10;
@@ -427,7 +461,7 @@ impl ContractId {
                 ),
             });
         }
-        Ok(())
+        Ok(payload)
     }
 }
 

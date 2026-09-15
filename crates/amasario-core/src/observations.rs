@@ -57,6 +57,21 @@ impl NetworkType {
         }
     }
 
+    /// Every network type, in the order the specification's taxonomy lists them.
+    ///
+    /// Present so that the conformance test can compare this enumeration against
+    /// `taxonomies/network-types.yaml` mechanically rather than by inspection.
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::Local,
+            Self::Futurenet,
+            Self::Testnet,
+            Self::Mainnet,
+            Self::Custom,
+        ]
+    }
+
     /// How durable an observation made here is.
     ///
     /// Recorded because a comparison across a boundary that may have been reset is

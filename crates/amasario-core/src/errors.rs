@@ -32,7 +32,16 @@ use serde::{Deserialize, Serialize};
 /// The variants correspond one-to-one with the `category` enumeration in
 /// `schema/error.schema.json`. Adding a variant here without adding it there, or
 /// the reverse, is caught by `crates/amasario-core/tests/error_categories.rs`,
-/// which reads the published schema.
+/// which reads the published schema and compares it against [`ErrorCategory::all`].
+///
+/// That test is ignored by default because it needs the specification repository
+/// checked out alongside this one, and a test suite that fails without an unrelated
+/// checkout is one people stop running. CI checks the specification out and runs it
+/// explicitly:
+///
+/// ```console
+/// AMASARIO_SPEC_DIR=../amasario-provenance-spec cargo test -p amasario-core -- --include-ignored
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[non_exhaustive]
@@ -87,6 +96,33 @@ impl ErrorCategory {
             Self::Validation => "VALIDATION",
             Self::Internal => "INTERNAL",
         }
+    }
+
+    /// Every category, in the order the specification's schema lists them.
+    ///
+    /// Present so that the conformance test in
+    /// `crates/amasario-core/tests/error_categories.rs` can compare this
+    /// enumeration against `schema/error.schema.json` mechanically. A category added
+    /// on one side and not the other would otherwise be discovered by a consumer
+    /// whose report could not be parsed, which is a late and confusing way to find
+    /// out.
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::Configuration,
+            Self::Network,
+            Self::Contract,
+            Self::Provenance,
+            Self::Dependency,
+            Self::Graph,
+            Self::Impact,
+            Self::Snapshot,
+            Self::Report,
+            Self::SpecificationCompatibility,
+            Self::Export,
+            Self::Validation,
+            Self::Internal,
+        ]
     }
 }
 

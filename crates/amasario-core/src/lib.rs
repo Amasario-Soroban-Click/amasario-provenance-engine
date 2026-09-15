@@ -104,7 +104,16 @@ pub mod observations;
 pub mod pipeline;
 pub mod relationships;
 
-pub use configuration::EngineConfig;
+// Re-exported together because they are used together: a caller building a run
+// needs the configuration, the bounds it contains, and the policy that governs
+// retries, and having to know which module each lives in would be friction with no
+// benefit. The constants travel with them so that a caller can name a default
+// rather than restating a number.
+pub use configuration::{
+    DEFAULT_CONCURRENCY, DEFAULT_MAX_ATTEMPTS, DEFAULT_MAX_DEPTH, DEFAULT_MAX_NODES,
+    DEFAULT_REQUEST_TIMEOUT, DEFAULT_RETRY_BACKOFF, DepthBounds, EngineConfig,
+    MAX_PERMITTED_CONCURRENCY, MAX_PERMITTED_DEPTH, RecursionMode, RetryPolicy,
+};
 pub use context::{Cancellation, ExecutionContext};
 pub use engine::{ENGINE_VERSION, Engine, SUPPORTED_API_VERSION, SUPPORTED_SPEC_VERSION};
 pub use errors::{EngineError, ErrorCategory, Result};

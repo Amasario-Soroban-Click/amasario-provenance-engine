@@ -604,6 +604,24 @@ impl VerificationStatus {
         }
     }
 
+    /// Every status.
+    ///
+    /// Present so that the conformance test can compare this enumeration against
+    /// `taxonomies/verification-statuses.yaml` mechanically. The order here is this
+    /// crate's, not the taxonomy's: `CONFLICTING` is listed first because it takes
+    /// precedence over every other status when two are combined, and the comparison
+    /// against the taxonomy is therefore made as a set rather than as a sequence.
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::Conflicting,
+            Self::Verified,
+            Self::PartiallyVerified,
+            Self::Unverified,
+            Self::Unknown,
+        ]
+    }
+
     /// Whether this status asserts that the claim was refuted.
     #[must_use]
     pub const fn is_refutation(self) -> bool {
