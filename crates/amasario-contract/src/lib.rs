@@ -71,6 +71,7 @@
 
 pub mod errors;
 pub mod identity;
+pub mod inspector;
 pub mod interface;
 pub mod invocations;
 pub mod storage;
@@ -84,6 +85,10 @@ pub use errors::{InspectionFailure, describe, first_failure};
 pub use identity::{
     CONTRACT_IDENTITY_VERSION, ContractExecutableKind, ContractIdentity, InstanceModification,
     InstanceModificationKind, Observedness, digest_from_hash_bytes,
+};
+pub use inspector::{
+    ContractInspection, DEFAULT_MAX_TRANSACTION_READS, EmittedEvent, InspectionRequest, Inspector,
+    MAX_MODIFICATION_OPERATIONS, UPDATE_CURRENT_CONTRACT_WASM, code_entry_absent, event_type_name,
 };
 pub use interface::{
     ContractInterface, InterfaceEnum, InterfaceEnumCase, InterfaceEvent, InterfaceEventParam,
@@ -121,6 +126,7 @@ mod tests {
         assert_eq!(ImportKind::Memory.as_str(), "MEMORY");
         assert_eq!(WASM_MAGIC[0], 0x00);
         assert_eq!(CONTRACT_SPEC_SECTION, "contractspecv0");
+        assert_eq!(MAX_MODIFICATION_OPERATIONS, 200);
     }
 
     #[test]
