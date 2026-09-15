@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Render two directly observed dependencies as a graph.
+#
+# Runs offline against the generated corpus, so the committed expected.out can be
+# compared byte for byte. The corpus document was built by the engine from recorded
+# invocations; nothing here was typed by hand.
+set -euo pipefail
+
+exec cargo run -q -p amasario-cli -- export \
+  --input "${AMASARIO_INPUT:-fixtures/graphs/direct.json}" \
+  --format dot

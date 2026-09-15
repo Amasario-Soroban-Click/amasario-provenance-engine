@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Inspect a contract on a local standalone chain.
+#
+# Requires a running node at ${AMASARIO_RPC}, defaulting to the Soroban quickstart's
+# local endpoint. When AMASARIO_RPC names an address that refuses connections the run
+# exits 69 (NETWORK), which is how the check verifies the flags parse without needing a
+# chain: an unknown flag would exit 2 before any request was made.
+set -euo pipefail
+
+rpc_args=()
+if [ -n "${AMASARIO_RPC:-}" ]; then
+  rpc_args=(--rpc "${AMASARIO_RPC}")
+else
+  rpc_args=(--rpc http://localhost:8000/soroban/rpc)
+fi
+
+# The standalone network's passphrase, which is what identifies the chain. The endpoint
+# is checked against it, so a node serving a different chain is refused rather than
+# analysed.
+exec cargo run -q -p amasario-cli -- inspect \
+  --contract "${AMASARIO_CONTRACT:-CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5}" \
+  --passphrase "${AMASARIO_PASSPHRASE:-Standalone Network ; February 2017}" \
+  --network-name "${AMASARIO_NETWORK_NAME:-local}" \
+  "${rpc_args[@]}"

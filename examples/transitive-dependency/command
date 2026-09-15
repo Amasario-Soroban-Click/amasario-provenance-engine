@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Render a transitive dependency chain, closed over observed edges.
+#
+# Runs offline against the generated corpus. The closure in the committed document was
+# produced by the engine's own `close_set`, so the two-hop chain here is a closure over
+# real edges rather than a hand-drawn picture of one.
+set -euo pipefail
+
+exec cargo run -q -p amasario-cli -- export \
+  --input "${AMASARIO_INPUT:-fixtures/graphs/transitive.json}" \
+  --format dot

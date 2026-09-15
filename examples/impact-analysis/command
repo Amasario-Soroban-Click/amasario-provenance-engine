@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Render the propagation surface a change travels over.
+#
+# Runs offline against the generated corpus. The chain here is built by the engine from
+# its own graph type, and the finding set that a change propagates through it is in
+# fixtures/impact/multi-hop.json, which the corpus suite keeps in step with the graph.
+set -euo pipefail
+
+exec cargo run -q -p amasario-cli -- export \
+  --input "${AMASARIO_INPUT:-fixtures/graphs/multi-hop.json}" \
+  --format dot

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# Establish a contract's provenance chain where every link resolves.
+#
+# The three claim flags are what make the run evaluable: without a source repository, a
+# revision and an artifact digest the engine has been told nothing and reports UNKNOWN.
+# AMASARIO_RPC overrides the testnet endpoint, which is how the check points the run at
+# an address that refuses connections and requires exit 69 (NETWORK).
+set -euo pipefail
+
+rpc_args=()
+if [ -n "${AMASARIO_RPC:-}" ]; then
+  rpc_args=(--rpc "${AMASARIO_RPC}")
+fi
+
+exec cargo run -q -p amasario-cli -- provenance \
+  --contract "${AMASARIO_CONTRACT:-CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5}" \
+  --network "${AMASARIO_NETWORK:-testnet}" \
+  --source-repo "${AMASARIO_SOURCE_REPO:-https://github.com/example/contract}" \
+  --revision "${AMASARIO_REVISION:-4f2c1ab}" \
+  --artifact-digest "${AMASARIO_ARTIFACT_DIGEST:-0019d92116894fb1a00b33506a8c4cae6a8a12e66adccd788bbe8e69e7486df2}" \
+  --format json \
+  --pretty \
+  "${rpc_args[@]}"

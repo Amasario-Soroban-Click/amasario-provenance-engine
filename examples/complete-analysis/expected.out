@@ -1,0 +1,134 @@
+== snapshot show ==
+snapshot    snapshot-b48d9fd70a9ca22de6b0e4683a6c105c
+read from   fixtures/snapshots/testnet-alpha-after.json
+captured    2026-01-02T00:00:00Z
+contract    CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG
+network     testnet
+at ledger   1044
+engine      1.0.0
+evidence    6 record(s)
+confidence  LOW_CONFIDENCE
+graph       3 node(s), 2 edge(s)
+digest      77ebce72c809873d1437fd20f8a15fe6437932263ea58e95ce9fa5fd73bdd388
+
+A snapshot records what was observed at one boundary. It is not a security assessment.
+
+== export --format json ==
+{"apiVersion":"amasario.dev/v1","specVersion":"1.0.0","id":"amasario.transitive","nodes":[{"id":"CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG","kind":"CONTRACT"},{"id":"CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K","kind":"CONTRACT"},{"id":"CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3","kind":"CONTRACT"}],"edges":[{"id":"71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef","source":"CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG","target":"CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K","relationship":"INVOCATES","evidence":["0101010101010101010101010101010101010101010101010101010101010101"],"confidence":{"level":"VERIFIED","evidence":["TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101"],"rationale":"the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"},"boundary":{"network":{"id":"testnet","type":"TESTNET","passphrase":"Test SDF Network ; September 2015"},"ledger":1044,"observedAt":"2026-01-01T00:00:00Z"},"observed":true},{"id":"31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714","source":"CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K","target":"CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3","relationship":"INVOCATES","evidence":["0303030303030303030303030303030303030303030303030303030303030303"],"confidence":{"level":"VERIFIED","evidence":["TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303"],"rationale":"the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED"},"boundary":{"network":{"id":"testnet","type":"TESTNET","passphrase":"Test SDF Network ; September 2015"},"ledger":1044,"observedAt":"2026-01-01T00:00:00Z"},"observed":true}],"boundary":{"network":{"id":"testnet","type":"TESTNET","passphrase":"Test SDF Network ; September 2015"},"ledger":1044,"observedAt":"2026-01-01T00:00:00Z"},"metadata":{"directed":true,"cyclic":false,"nodeCount":3,"edgeCount":2,"truncated":false,"disconnectedNodes":[]}}
+
+== export --format yaml ==
+apiVersion: amasario.dev/v1
+specVersion: 1.0.0
+id: amasario.transitive
+nodes:
+- id: CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG
+  kind: CONTRACT
+- id: CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K
+  kind: CONTRACT
+- id: CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3
+  kind: CONTRACT
+edges:
+- id: 71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef
+  source: CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG
+  target: CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K
+  relationship: INVOCATES
+  evidence:
+  - '0101010101010101010101010101010101010101010101010101010101010101'
+  confidence:
+    level: VERIFIED
+    evidence:
+    - TRANSACTION:0101010101010101010101010101010101010101010101010101010101010101
+    rationale: the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED
+  boundary:
+    network:
+      id: testnet
+      type: TESTNET
+      passphrase: Test SDF Network ; September 2015
+    ledger: 1044
+    observedAt: 2026-01-01T00:00:00Z
+  observed: true
+- id: 31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714
+  source: CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K
+  target: CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3
+  relationship: INVOCATES
+  evidence:
+  - '0303030303030303030303030303030303030303030303030303030303030303'
+  confidence:
+    level: VERIFIED
+    evidence:
+    - TRANSACTION:0303030303030303030303030303030303030303030303030303030303030303
+    rationale: the OBSERVED_INVOCATION basis sets a ceiling of VERIFIED
+  boundary:
+    network:
+      id: testnet
+      type: TESTNET
+      passphrase: Test SDF Network ; September 2015
+    ledger: 1044
+    observedAt: 2026-01-01T00:00:00Z
+  observed: true
+boundary:
+  network:
+    id: testnet
+    type: TESTNET
+    passphrase: Test SDF Network ; September 2015
+  ledger: 1044
+  observedAt: 2026-01-01T00:00:00Z
+metadata:
+  directed: true
+  cyclic: false
+  nodeCount: 3
+  edgeCount: 2
+  truncated: false
+  disconnectedNodes: []
+
+== export --format dot ==
+digraph amasario {
+  rankdir=LR;
+  label="testnet at ledger 1044";
+  labelloc="t";
+  "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG" [label="CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG", amasarioKind="CONTRACT"];
+  "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K" [label="CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K", amasarioKind="CONTRACT"];
+  "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3" [label="CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3", amasarioKind="CONTRACT"];
+  "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG" -> "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K" [label="INVOCATES\nVERIFIED", style=solid, amasarioEdge="71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef", amasarioObserved="true", amasarioConfidence="VERIFIED", amasarioEvidence="0101010101010101010101010101010101010101010101010101010101010101", amasarioBoundary="testnet@ledger1044"];
+  "CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K" -> "CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3" [label="INVOCATES\nVERIFIED", style=solid, amasarioEdge="31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714", amasarioObserved="true", amasarioConfidence="VERIFIED", amasarioEvidence="0303030303030303030303030303030303030303030303030303030303030303", amasarioBoundary="testnet@ledger1044"];
+}
+
+== export --format graphml ==
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d0" for="node" attr.name="kind" attr.type="string"/>
+  <key id="d1" for="node" attr.name="label" attr.type="string"/>
+  <key id="d2" for="node" attr.name="digest" attr.type="string"/>
+  <key id="d3" for="edge" attr.name="id" attr.type="string"/>
+  <key id="d4" for="edge" attr.name="relationship" attr.type="string"/>
+  <key id="d5" for="edge" attr.name="confidence" attr.type="string"/>
+  <key id="d6" for="edge" attr.name="observed" attr.type="boolean"/>
+  <key id="d7" for="edge" attr.name="evidence" attr.type="string"/>
+  <key id="d8" for="edge" attr.name="boundary" attr.type="string"/>
+  <graph id="amasario" edgedefault="directed">
+    <desc>testnet at ledger 1044, observed 2026-01-01T00:00:00Z</desc>
+    <node id="CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG">
+      <data key="d0">CONTRACT</data>
+    </node>
+    <node id="CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K">
+      <data key="d0">CONTRACT</data>
+    </node>
+    <node id="CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3">
+      <data key="d0">CONTRACT</data>
+    </node>
+    <edge id="71ee1a32fdffa9a1cde64b0369a332e3f18d88a6abe5229f94b602ac37be94ef" source="CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG" target="CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K">
+      <data key="d4">INVOCATES</data>
+      <data key="d5">VERIFIED</data>
+      <data key="d6">true</data>
+      <data key="d7">0101010101010101010101010101010101010101010101010101010101010101</data>
+      <data key="d8">testnet@ledger1044</data>
+    </edge>
+    <edge id="31770674e5ec32345c771c22f33805da7ee4e33ce626ec31fab9dfdccc0ae714" source="CONTRACT:CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K" target="CONTRACT:CDB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4G2F3">
+      <data key="d4">INVOCATES</data>
+      <data key="d5">VERIFIED</data>
+      <data key="d6">true</data>
+      <data key="d7">0303030303030303030303030303030303030303030303030303030303030303</data>
+      <data key="d8">testnet@ledger1044</data>
+    </edge>
+  </graph>
+</graphml>

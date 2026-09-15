@@ -1,0 +1,22 @@
+diff        fixtures/snapshots/testnet-alpha-before.json -> fixtures/snapshots/testnet-alpha-after.json
+snapshots   snapshot-b48d9fd70a9ca22de6b0e4683a6c105c (d2d062f7cd13dd79f9cc25972b01dadbe306daf6a9d04420836a5505416511e2) -> snapshot-b48d9fd70a9ca22de6b0e4683a6c105c (77ebce72c809873d1437fd20f8a15fe6437932263ea58e95ce9fa5fd73bdd388)
+changes     4
+  IMPACT_SURFACE_CHANGED: 3
+  RELATIONSHIP_ADDED: 1
+
+ADDED [RELATIONSHIP_ADDED] CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG at /dependencies/CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG -INVOCATES-> CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5
+  because     the relationship CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG -INVOCATES-> CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 is asserted in the later capture and was not asserted in the earlier one
+  after       "CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG -INVOCATES-> CONTRACT:CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5"
+ADDED [IMPACT_SURFACE_CHANGED] CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG at /impact/3ba2cf0f5b50825d8316da0000a706e3c60c2a32fddd1419423676dee4a4d18e
+  because     finding 3ba2cf0f5b50825d8316da0000a706e3c60c2a32fddd1419423676dee4a4d18e is new in the later capture, so the set of entities a change could reach is larger than it was
+  after       "3ba2cf0f5b50825d8316da0000a706e3c60c2a32fddd1419423676dee4a4d18e"
+REMOVED [IMPACT_SURFACE_CHANGED] CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG at /impact/7bf93254d1af032bea5414f16ce1befccaad84ea2165c0d6120735a61f157213
+  because     finding 7bf93254d1af032bea5414f16ce1befccaad84ea2165c0d6120735a61f157213 is absent from the later capture, so an entity that could previously have been reached no longer can be by that route
+  before      "7bf93254d1af032bea5414f16ce1befccaad84ea2165c0d6120735a61f157213"
+ADDED [IMPACT_SURFACE_CHANGED] CONTRACT:CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG at /impact/f2aaa735d3861e2c399d71995b3b2519cf1aa8b3ed8590f19b7393ba3ccab5ea
+  because     finding f2aaa735d3861e2c399d71995b3b2519cf1aa8b3ed8590f19b7393ba3ccab5ea is new in the later capture, so the set of entities a change could reach is larger than it was
+  after       "f2aaa735d3861e2c399d71995b3b2519cf1aa8b3ed8590f19b7393ba3ccab5ea"
+
+this difference changes the dependency or provenance surface, so an impact analysis from the after-state is warranted
+
+A difference here is a change in what was observed, not an assessment of whether the change is safe.

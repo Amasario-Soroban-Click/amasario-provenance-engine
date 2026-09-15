@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Compare two captures of the same contract at two observation boundaries.
+#
+# Runs offline: a diff reads two files and needs no network. The snapshots are generated
+# by the corpus, and their content digests exclude the capture timestamp, so a re-run on
+# unchanged state compares equal rather than reporting a change that is only a clock.
+set -euo pipefail
+
+exec cargo run -q -p amasario-cli -- diff \
+  --before "${AMASARIO_BEFORE:-fixtures/snapshots/testnet-alpha-before.json}" \
+  --after "${AMASARIO_AFTER:-fixtures/snapshots/testnet-alpha-after.json}"

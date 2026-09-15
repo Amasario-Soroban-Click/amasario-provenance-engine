@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# Report what can be established about a contract when no provenance is claimed.
+#
+# Nothing is claimed here, so nothing can be verified: the run observes the contract and
+# records the question it could not answer rather than inventing a chain. AMASARIO_RPC
+# overrides the testnet endpoint, which is how the check points the run at an address
+# that refuses connections and requires exit 69 (NETWORK).
+set -euo pipefail
+
+rpc_args=()
+if [ -n "${AMASARIO_RPC:-}" ]; then
+  rpc_args=(--rpc "${AMASARIO_RPC}")
+fi
+
+exec cargo run -q -p amasario-cli -- provenance \
+  --contract "${AMASARIO_CONTRACT:-CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5}" \
+  --network "${AMASARIO_NETWORK:-testnet}" \
+  --format json \
+  --pretty \
+  "${rpc_args[@]}"

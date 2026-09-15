@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Inspect a contract on testnet.
+#
+# Testnet is a network the engine ships an endpoint and a passphrase for, so no --rpc is
+# required. AMASARIO_RPC overrides it, which is how the check points the run at an
+# address that refuses connections and requires exit 69 (NETWORK): an unknown flag would
+# exit 2 first, so a 69 proves the command line parsed.
+set -euo pipefail
+
+rpc_args=()
+if [ -n "${AMASARIO_RPC:-}" ]; then
+  rpc_args=(--rpc "${AMASARIO_RPC}")
+fi
+
+horizon_args=()
+if [ -n "${AMASARIO_HORIZON:-}" ]; then
+  horizon_args=(--horizon "${AMASARIO_HORIZON}")
+fi
+
+exec cargo run -q -p amasario-cli -- inspect \
+  --contract "${AMASARIO_CONTRACT:-CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5}" \
+  --network "${AMASARIO_NETWORK:-testnet}" \
+  "${rpc_args[@]}" \
+  "${horizon_args[@]}"
