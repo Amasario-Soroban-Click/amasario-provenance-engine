@@ -71,6 +71,7 @@
 
 pub mod errors;
 pub mod identity;
+pub mod wasm;
 
 // Re-exported together because they are used together: a caller working with a
 // contract's identity needs the failure model that says what could not be
@@ -80,6 +81,11 @@ pub use errors::{InspectionFailure, describe, first_failure};
 pub use identity::{
     CONTRACT_IDENTITY_VERSION, ContractExecutableKind, ContractIdentity, InstanceModification,
     InstanceModificationKind, Observedness, digest_from_hash_bytes,
+};
+pub use wasm::{
+    CONTRACT_ENV_META_SECTION, CONTRACT_SPEC_SECTION, ImportKind, MAX_DECODED_ENTRIES,
+    MAX_KNOWN_SECTION_ID, SectionKind, WASM_MAGIC, WASM_VERSION, WasmExport, WasmImport,
+    WasmModule, WasmSection, digest_of, looks_like_module, parse_module, verify_digest,
 };
 
 #[cfg(test)]
@@ -95,5 +101,19 @@ mod tests {
         assert_eq!(Observedness::Observed.as_str(), "OBSERVED");
         assert_eq!(InstanceModificationKind::Deploy.as_str(), "DEPLOY");
         assert_eq!(CONTRACT_IDENTITY_VERSION, "amasario/contract-identity/v1");
+        assert_eq!(SectionKind::Custom.id(), 0);
+        assert_eq!(ImportKind::Memory.as_str(), "MEMORY");
+        assert_eq!(WASM_MAGIC[0], 0x00);
+        assert_eq!(CONTRACT_SPEC_SECTION, "contractspecv0");
+    }
+
+    #[test]
+    fn a_well_formed_minimal_module_is_readable_through_the_crate_root() {
+        let bytes = [WASM_MAGIC, WASM_VERSION].concat();
+        assert!(looks_like_module(&bytes));
+        let module: WasmModule = parse_module(&bytes).expect("a bare module is valid");
+        assert!(!module.declares_interface());
+        assert!(module.host_function_imports().is_empty());
+        assert_eq!(module.module_digest, digest_of(&bytes));
     }
 }
