@@ -1,0 +1,231 @@
+name: Amasario provenance analysis
+description: >-
+  Analyse a Soroban contract's dependencies, provenance and impact with the Amasario
+  engine. The engine is built from this action's own ref, the analysis runs read-only
+  against the network you name, and the job fails when the analysis finds a refutation or
+  a required verification level is not reached.
+
+# Why a composite action rather than a container
+#
+# The engine is a Rust binary with no runtime services and no credentials, so a container
+# image would add a registry dependency and a layer of indirection for nothing. Building
+# from the ref the caller pinned means the action and the engine cannot drift: a caller
+# who pins `@v1` runs the engine at `v1`, and `git blame` on this file answers what ran.
+
+inputs:
+  contract:
+    description: The Soroban contract address to analyse.
+    required: true
+  command:
+    description: >-
+      One of inspect, discover, provenance, dependencies, graph, impact, snapshot, verify,
+      report. Read-only analysis only; the engine has no mutating command to run.
+    required: false
+    default: dependencies
+  network:
+    description: futurenet, testnet or mainnet. Mainnet needs `rpc` as well.
+    required: false
+    default: testnet
+  rpc:
+    description: An RPC endpoint override, required for mainnet and private chains.
+    required: false
+    default: ""
+  horizon:
+    description: >-
+      A Horizon endpoint override. Supplying one enables deployment resolution in the
+      provenance chain; without it, deployment links are reported `UNVERIFIED` with the
+      reason rather than guessed.
+    required: false
+    default: ""
+  passphrase:
+    description: The network passphrase, for a chain the engine ships no identity for.
+    required: false
+    default: ""
+  network-name:
+    description: The name to record for a custom network.
+    required: false
+    default: ""
+  args:
+    description: >-
+      Further arguments passed through to the command, as one string. The flag that
+      matters most for coverage is `--scan-events`, which is what finds cross-contract
+      calls: without it, a contract-to-contract dependency is only visible in transaction
+      history, which is thinner. It is not defaulted on, because commands that do not
+      scan events reject it.
+    required: false
+    default: ""
+  claimed-digest:
+    description: >-
+      A SHA-256 executable digest to compare against what the network reports. Only
+      `verify` reads it, and a mismatch is CONFLICTING however the module itself checked
+      out, because two claims about one digest disagreeing is a conflict.
+    required: false
+    default: ""
+  require:
+    description: >-
+      For `verify`, the minimum outcome the gate accepts: verified, partially or
+      unverified. A CONFLICTING outcome fails regardless, because a contradiction is not
+      below VERIFIED but a different kind of answer.
+    required: false
+    default: ""
+  format:
+    description: text, json, markdown, dot or junit. The document is written to `output`.
+    required: false
+    default: markdown
+  output:
+    description: Where to write the rendered document, relative to the caller's workspace.
+    required: false
+    default: amasario-report.md
+  toolchain:
+    description: >-
+      Whether to install the pinned Rust toolchain before building. The engine's
+      `rust-toolchain.toml` is honoured either way; this only decides whether `rustup`
+      is given a chance to fetch the pinned channel on a runner that lacks it.
+    required: false
+    default: "true"
+
+outputs:
+  report:
+    description: The path the rendered document was written to.
+    value: ${{ steps.analyse.outputs.report }}
+  binary:
+    description: The path of the engine binary that ran.
+    value: ${{ steps.build.outputs.binary }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install the pinned toolchain
+      if: inputs.toolchain == 'true'
+      shell: bash
+      # `rustup show` inside the checked-out ref reads that ref's `rust-toolchain.toml`
+      # and installs the channel it names. A provenance engine's output is meant to be
+      # reproducible, so the action runs the compiler the repository pins rather than
+      # whatever the runner image happens to ship.
+      run: |
+        set -euo pipefail
+        cd "${GITHUB_ACTION_PATH}/../../.."
+        rustup show
+
+    - name: Build the engine
+      id: build
+      shell: bash
+      run: |
+        set -euo pipefail
+        repo_root="$(cd -- "${GITHUB_ACTION_PATH}/../../.." && pwd)"
+        if ! command -v cargo >/dev/null 2>&1; then
+          echo "::error title=No Rust toolchain::This action needs cargo. Add an \
+        actions/setup-rust or dtolnay/rust-toolchain step before it, or set \
+        toolchain: 'true'."
+          exit 1
+        fi
+        cd "${repo_root}"
+        cargo build --release --locked -p amasario-cli
+        binary="${repo_root}/target/release/amasario"
+        if [ ! -x "${binary}" ]; then
+          echo "::error title=Build produced no binary::Expected ${binary}."
+          exit 1
+        fi
+        echo "binary=${binary}" >> "${GITHUB_OUTPUT}"
+
+    - name: Analyse
+      id: analyse
+      shell: bash
+      env:
+        # Passed through the environment rather than interpolated into the script, so a
+        # contract address containing shell metacharacters cannot become a command. A
+        # contract address is a base32 string, but the action should not depend on that.
+        AMASARIO_CONTRACT: ${{ inputs.contract }}
+        AMASARIO_COMMAND: ${{ inputs.command }}
+        AMASARIO_NETWORK: ${{ inputs.network }}
+        AMASARIO_RPC: ${{ inputs.rpc }}
+        AMASARIO_HORIZON: ${{ inputs.horizon }}
+        AMASARIO_PASSPHRASE: ${{ inputs.passphrase }}
+        AMASARIO_NETWORK_NAME: ${{ inputs.network-name }}
+        AMASARIO_ARGS: ${{ inputs.args }}
+        AMASARIO_CLAIMED_DIGEST: ${{ inputs.claimed-digest }}
+        AMASARIO_REQUIRE: ${{ inputs.require }}
+        AMASARIO_FORMAT: ${{ inputs.format }}
+        AMASARIO_OUTPUT: ${{ inputs.output }}
+        AMASARIO_BIN: ${{ steps.build.outputs.binary }}
+      run: |
+        set -euo pipefail
+
+        # The command set is checked here rather than left to the CLI, because the CLI's
+        # error for an unknown subcommand is a usage message and this is a workflow
+        # mistake. Failing with the list of what is supported is the difference between a
+        # maintainer fixing it in a minute and a maintainer reading a help page.
+        case "${AMASARIO_COMMAND}" in
+          inspect|discover|provenance|dependencies|graph|impact|snapshot|verify|report) ;;
+          *)
+            echo "::error title=Unsupported command::'${AMASARIO_COMMAND}' is not one of \
+        inspect, discover, provenance, dependencies, graph, impact, snapshot, verify, report."
+            exit 1
+            ;;
+        esac
+
+        # A hint rather than a default, because the flag is only accepted by the commands
+        # that scan events. A default that broke four of the nine commands would be worse
+        # than a warning: the whole point of this action is to be adoptable without
+        # reading the engine's help output first.
+        if [ -z "${AMASARIO_ARGS}" ]; then
+          case "${AMASARIO_COMMAND}" in
+            dependencies|graph|impact|snapshot|provenance)
+              echo "::warning title=No --scan-events::'${AMASARIO_COMMAND}' ran without \
+        --scan-events, so a contract-to-contract dependency will only be found in \
+        transaction history. Set args: '--scan-events --depth 2' for the fuller answer."
+              ;;
+          esac
+        fi
+
+        extra=()
+        if [ -n "${AMASARIO_CLAIMED_DIGEST}" ]; then
+          extra+=(--claimed-digest "${AMASARIO_CLAIMED_DIGEST}")
+        fi
+        if [ -n "${AMASARIO_REQUIRE}" ]; then
+          extra+=(--require "${AMASARIO_REQUIRE}")
+        fi
+        if [ -n "${AMASARIO_RPC}" ]; then
+          extra+=(--rpc "${AMASARIO_RPC}")
+        fi
+        if [ -n "${AMASARIO_HORIZON}" ]; then
+          extra+=(--horizon "${AMASARIO_HORIZON}")
+        fi
+        if [ -n "${AMASARIO_PASSPHRASE}" ]; then
+          extra+=(--passphrase "${AMASARIO_PASSPHRASE}")
+        fi
+        if [ -n "${AMASARIO_NETWORK_NAME}" ]; then
+          extra+=(--network-name "${AMASARIO_NETWORK_NAME}")
+        fi
+
+        # `--scan-events` and the rest arrive as one string, which is deliberate: they are
+        # the caller's flags, and re-parsing them into an array would silently drop one it
+        # did not recognise. Word splitting is what the caller asked for.
+        # shellcheck disable=SC2086
+        set -- ${AMASARIO_ARGS}
+
+        mkdir -p "$(dirname -- "${AMASARIO_OUTPUT}")"
+        "${AMASARIO_BIN}" "${AMASARIO_COMMAND}" \
+          --contract "${AMASARIO_CONTRACT}" \
+          --network "${AMASARIO_NETWORK}" \
+          --format "${AMASARIO_FORMAT}" \
+          --output "${AMASARIO_OUTPUT}" \
+          "$@" "${extra[@]+"${extra[@]}"}"
+
+        echo "report=${AMASARIO_OUTPUT}" >> "${GITHUB_OUTPUT}"
+
+        # The rendered document goes into the job summary as well as the file, so that the
+        # finding is visible without downloading an artifact. Markdown and text render
+        # as-is; JSON is fenced, because an unfenced JSON block in a summary is unreadable.
+        {
+          echo "### Amasario \`${AMASARIO_COMMAND}\` on \`${AMASARIO_NETWORK}\`"
+          echo
+          case "${AMASARIO_FORMAT}" in
+            json) echo '```json' ;;
+            *) echo '' ;;
+          esac
+          cat "${AMASARIO_OUTPUT}"
+          if [ "${AMASARIO_FORMAT}" = "json" ]; then
+            echo '```'
+          fi
+        } >> "${GITHUB_STEP_SUMMARY}"

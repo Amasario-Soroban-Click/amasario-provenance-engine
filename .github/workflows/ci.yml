@@ -61,6 +61,29 @@ jobs:
       - name: Shell scripts
         run: shellcheck --severity=style scripts/*.sh scripts/*.env
 
+      # The workflows and the composite action are code, and a workflow that does not
+      # parse is a gate that silently stops running: the failure mode is a green
+      # repository, not a red one. `actionlint` catches that class, along with the
+      # expression mistakes a shell cannot see - referencing `needs.x.outputs.y` from a
+      # job that does not declare `needs: x` is valid YAML, valid GitHub syntax and an
+      # empty string at run time, which is how the release job came to cut its notes
+      # from an empty version.
+      #
+      # Pinned by version and by digest rather than fetched unpinned, because a check on
+      # the supply chain should not itself be the weakest link in it.
+      - name: Workflows and the composite action
+        env:
+          ACTIONLINT_VERSION: 1.7.7
+          ACTIONLINT_SHA256: 023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "${archive}" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "${archive}" actionlint
+          ./actionlint -color .github/workflows/*.yml
+
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 

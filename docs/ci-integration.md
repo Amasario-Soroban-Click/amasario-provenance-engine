@@ -3,7 +3,50 @@
 Two things live here: how *this* repository's CI is wired, and how to wire the engine into
 *your* CI.
 
+## The quickest way in: the composite action
+
+The repository publishes a composite action, so adopting the engine does not require
+working out how to build it, where the binary lands, or which flags a command takes:
+
+```yaml
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: Amasario-Soroban-Click/amasario-provenance-engine/.github/actions/amasario@v1
+        with:
+          contract: CABC...
+          network: testnet
+          command: dependencies
+          args: --scan-events --depth 2
+          output: dependency-report.md
+```
+
+It builds the engine from the ref you pinned — so the action cannot run an engine other
+than the one at that ref — writes the rendered document to `output`, and appends it to the
+job summary so the finding is visible without downloading an artifact. It exposes `report`
+and `binary` as outputs.
+
+| Input | Default | Notes |
+| --- | --- | --- |
+| `contract` | *(required)* | The address to analyse. |
+| `command` | `dependencies` | One of `inspect`, `discover`, `provenance`, `dependencies`, `graph`, `impact`, `snapshot`, `verify`, `report`. |
+| `network` | `testnet` | `mainnet` also needs `rpc`. |
+| `args` | *(empty)* | Passed through as one string. `--scan-events` is what finds cross-contract calls; the action warns when a command that scans events ran without it. |
+| `format` | `markdown` | `text`, `json`, `markdown`, `dot` or `junit`. |
+| `output` | `amasario-report.md` | Relative to the caller's workspace. |
+| `require` | *(empty)* | For `verify`: `verified`, `partially` or `unverified`. |
+| `claimed-digest` | *(empty)* | For `verify`: a SHA-256 digest to compare against the network's. |
+| `rpc`, `horizon`, `passphrase`, `network-name` | *(empty)* | Endpoint and identity overrides. |
+| `toolchain` | `true` | Install the pinned toolchain before building. |
+
+The action runs read-only analysis, and the engine has no mutating mode for it to reach.
+
 ## Gating a release on provenance
+
+Without the action, build the engine yourself and call it:
 
 ```yaml
 - name: Install the engine
@@ -14,6 +57,11 @@ Two things live here: how *this* repository's CI is wired, and how to wire the e
     CONTRACT_ID: ${{ vars.CONTRACT_ID }}
   run: amasario verify --contract "$CONTRACT_ID" --network testnet --require partially
 ```
+
+With `--format json`, read `scope` before trusting the status. `scope.checked` and
+`scope.notChecked` state what was compared and what was not, which is the difference
+between internal consistency and an independent attestation — see
+[verification.md](verification.md).
 
 `amasario verify` exits `1` when the outcome is `CONFLICTING` or falls short of `--require`,
 so a job fails without parsing anything. The full status and exit-code tables are in

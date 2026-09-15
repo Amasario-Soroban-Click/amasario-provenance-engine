@@ -49,6 +49,15 @@ else
   echo "SKIPPED: shellcheck is not installed. Install it to lint scripts/."
 fi
 
+step "workflows and the composite action"
+# The same check CI runs. The digest is pinned in the workflow; here the check is left to
+# the installed copy, because a contributor's actionlint is theirs to trust.
+if command -v actionlint >/dev/null 2>&1; then
+  actionlint -color "${repo_root}"/.github/workflows/*.yml
+else
+  echo "SKIPPED: actionlint is not installed. Install it to lint .github/workflows/."
+fi
+
 step "linting (clippy, warnings denied)"
 cargo clippy --workspace --all-features --all-targets -- -D warnings
 

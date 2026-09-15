@@ -303,4 +303,130 @@ mod tests {
     fn the_binary_is_the_product_name() {
         assert!(Cli::command().get_name().contains("amasario"));
     }
+
+    /// The repository root, from this crate's manifest rather than the working directory,
+    /// because a test's working directory is the package root.
+    fn repository_root() -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(std::path::Path::parent)
+            .expect("the crate sits two levels under the repository root")
+            .to_path_buf()
+    }
+
+    /// A YAML document read from the repository, parsed.
+    fn yaml_relative(path: &str) -> serde_norway::Value {
+        let full = repository_root().join(path);
+        let text = std::fs::read_to_string(&full)
+            .unwrap_or_else(|error| panic!("{error}: {}", full.display()));
+        serde_norway::from_str(&text)
+            .unwrap_or_else(|error| panic!("{path} is not valid YAML: {error}"))
+    }
+
+    #[test]
+    fn every_workflow_parses_as_yaml() {
+        // A workflow that does not parse does not run, and the failure mode is a
+        // repository that looks green because its gate silently stopped executing. This
+        // is the cheapest possible check on that, and it runs in the crate that the
+        // workflows drive.
+        let workflows = repository_root().join(".github/workflows");
+        let entries = std::fs::read_dir(&workflows).expect("the workflows directory exists");
+
+        let mut seen = 0_usize;
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.extension().is_none_or(|extension| extension != "yml") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .expect("a file name")
+                .to_owned();
+            let document = yaml_relative(&format!(".github/workflows/{name}"));
+            assert!(
+                document.get("jobs").is_some_and(|jobs| !jobs.is_null()),
+                ".github/workflows/{name} declares no jobs, so it can never do anything"
+            );
+            seen += 1;
+        }
+
+        assert!(seen >= 9, "only {seen} workflows were found and parsed");
+    }
+
+    #[test]
+    fn the_composite_action_names_only_commands_the_cli_has() {
+        // The action is how another project adopts the engine, and its `case` statement is
+        // the allow-list of subcommands it will run. A subcommand renamed here and not
+        // there would be a broken action discovered by a stranger rather than by CI, so the
+        // list is checked against the command surface this crate actually declares.
+        let action = yaml_relative(".github/actions/amasario/action.yml");
+
+        assert_eq!(
+            action["runs"]["using"].as_str(),
+            Some("composite"),
+            "the action must be composite: the engine needs no container"
+        );
+        assert_eq!(
+            action["inputs"]["contract"]["required"].as_bool(),
+            Some(true),
+            "an analysis with no contract is not an analysis"
+        );
+
+        // The `case` alternatives, read out of the step that runs the engine rather than
+        // duplicated here, because a copy in the test is a copy that stops matching.
+        let steps = action["runs"]["steps"]
+            .as_sequence()
+            .expect("the action has steps");
+        let script = steps
+            .iter()
+            .filter_map(|step| step["run"].as_str())
+            .find(|script| script.contains("AMASARIO_COMMAND"))
+            .expect("a step that dispatches on the command");
+
+        let pattern = script
+            .lines()
+            .map(str::trim)
+            .find(|line| line.contains('|') && line.ends_with(") ;;"))
+            .expect("the command allow-list");
+        let alternatives = pattern
+            .strip_suffix(") ;;")
+            .expect("the allow-list line ends the case pattern")
+            .trim_end()
+            .split('|')
+            .collect::<Vec<_>>();
+
+        assert!(
+            alternatives.len() >= 9,
+            "the action allows fewer commands than the CLI has: {alternatives:?}"
+        );
+
+        let declared = Cli::command()
+            .get_subcommands()
+            .map(|subcommand| subcommand.get_name().to_owned())
+            .collect::<Vec<_>>();
+
+        for alternative in &alternatives {
+            assert!(
+                declared.iter().any(|name| name == alternative),
+                "the action runs `{alternative}`, which this CLI does not declare; \
+                 it declares {declared:?}"
+            );
+        }
+
+        // And the reverse, for the commands that need no extra arguments: a subcommand
+        // added here and never offered there is a gap a reader would not notice.
+        for name in &declared {
+            if matches!(name.as_str(), "help" | "diff" | "export") {
+                // `diff` and `export` read files rather than a network, and `help` is
+                // clap's own; none of the three is a contract analysis, which is the only
+                // thing the action exists to run.
+                continue;
+            }
+            assert!(
+                alternatives.contains(&name.as_str()),
+                "`{name}` is a contract analysis but the action does not offer it"
+            );
+        }
+    }
 }
