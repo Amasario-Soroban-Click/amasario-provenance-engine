@@ -4,9 +4,15 @@ A five-minute product pitch, written to be recorded in one pass rather than impr
 visual named below exists in this repository or in the deployed explorer, so nothing has to be
 staged except the browser.
 
-**Not yet recorded.** When it is, this page is where the link goes, and the README gets the
-thumbnail badge beside the others. Until then, the honest state is that the script exists and
-the recording does not.
+**Recorded.** Watch it at
+[amasario-explorer.vercel.app/pitch/amasario-pitch-v1.mp4](https://amasario-explorer.vercel.app/pitch/amasario-pitch-v1.mp4)
+— five minutes, 1080p, narrated. The file is served by the explorer's deployment rather than
+by a video host, so the link does not depend on a third-party account staying open, and the
+README carries the thumbnail badge beside the others.
+
+This page remains the script. Where the recording and the script disagree, the recording is
+what was said and this page is what was intended; where either disagrees with the documents
+this repository produces, the documents are what the project claims.
 
 ## The one thing the video has to land
 
@@ -186,17 +192,27 @@ Then the organisation URL and the live explorer URL.
 
 ---
 
-## Recording checklist
+## How it was recorded
 
-- [ ] Record at 1920×1080, 60 fps, with the terminal at a legible font size for a phone screen.
-- [ ] Hide the browser bookmarks bar and any personal tab.
-- [ ] Confirm every URL shown resolves on a machine that is not yours, before publishing.
-- [ ] Generate the voice-over with Gemini, listen once for a mispronounced project name, and
-      re-cut that sentence rather than re-recording the scene.
-- [ ] Export under 1080p / under 500 MB, so Loom transcodes cleanly.
-- [ ] Upload to Loom with the title, description and the explorer link, and set it to public.
-- [ ] Put the Loom link in `docs/pitch-video.md` *and* the README, and add the thumbnail badge
-      beside the existing badges.
-- [ ] Open the published link in a private window, to prove it is public rather than
-      org-visible — a video nobody outside the organisation can watch is worse than no video,
-      because the badge implies otherwise.
+Not with a screen recorder. Every frame is a 1920×1080 composition built around a live
+capture of the deployed explorer or the organisation's pages, with callouts drawn at the
+measured bounding box of the element they name — so a label cannot end up pointing at the
+wrong row. Shot durations are derived from the narration rather than chosen, so a sentence is
+never cut off by the next cut, and the whole thing re-renders from committed inputs.
+
+That makes the deviations from the plan above worth putting on the record rather than
+quietly dropping:
+
+- **30 fps, not 60.** The picture is a slow move over near-static frames. The extra frames
+  bought nothing a viewer can see and cost a full re-encode of every shot.
+- **Piper, not Gemini.** The narration is a local neural voice. A Gemini voice-over needs an
+  API key this environment did not have. The words are unchanged and the voice is a single
+  argument to the build, so re-rendering in another voice is one line.
+- **Served by the explorer, not Loom.** The file lives in
+  `amasario-explorer/public/pitch/` and is served by that deployment, so the video is
+  versioned with the code it describes and its link cannot lapse with an account.
+
+Two properties are checked rather than asserted. Every shot is confirmed to be on screen at
+its expected time by decoding a frame and comparing it against the image that shot was built
+from, and every narration clip is confirmed to begin within a tenth of a second of where the
+timeline places it. Both checks are in the build described below.
