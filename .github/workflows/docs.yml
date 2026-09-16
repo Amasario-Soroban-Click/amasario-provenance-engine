@@ -71,7 +71,17 @@ jobs:
             -not -path '*/node_modules/*' \
             -print0 | while IFS= read -r -d '' file; do
               dir="$(dirname "${file}")"
-              grep -oE '\]\([^)#][^)]*\)' "${file}" 2>/dev/null \
+              # `grep` exits 1 when a file contains no link at all, and `pipefail` turns
+              # that into the pipeline's status - so `set -e` ended the step at the first
+              # link-free file, before a single link had been resolved. The step aborted
+              # with no output and exit 1 on every run, which is why the job was red with
+              # an empty log. Grouping the `grep` with `|| true` says that "this file has
+              # no links" is ordinary input rather than a failure, while leaving the exit
+              # status of everything downstream - including `sed` - untouched. Written as
+              # `grep ... || true` without the braces it would parse as
+              # `grep ... || (true | sed ...)`, and a successful `grep` would then never
+              # reach `sed` at all.
+              { grep -oE '\]\([^)#][^)]*\)' "${file}" 2>/dev/null || true; } \
                 | sed -e 's/^](//' -e 's/)$//' \
                 | while IFS= read -r link; do
                     case "${link}" in
