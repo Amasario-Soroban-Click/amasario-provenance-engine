@@ -68,7 +68,16 @@ mod tests {
     #[test]
     fn caller_invokes_callee_and_reports_its_state() {
         let env = Env::default();
-        env.mock_all_auths();
+        // `mock_all_auths` is not enough here, and the difference between the two is the
+        // reason this test is worth having. That call mocks authorization for the *root*
+        // invocation only: it errors when `require_auth` is reached for an address that
+        // did not authorize the invocation the test itself made. `record_via` calls no
+        // `require_auth` - the *callee* does, one frame down - so the account never
+        // appears in the root invocation and the call fails with `Auth: InvalidAction`.
+        // The SDK's own documentation for the second variant names this exact shape as
+        // its reason to exist. Worth recording because the failure is a runtime panic
+        // rather than a type error, so nothing about the signature suggests it.
+        env.mock_all_auths_allowing_non_root_auth();
 
         let ledger_id = env.register(callee::WASM, ());
         let observer_id = env.register(Observer, ());
