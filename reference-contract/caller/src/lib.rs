@@ -95,4 +95,77 @@ mod tests {
         assert_eq!(ledger.sequence(&account), 1);
         assert_eq!(observer.observe(&ledger_id, &account), 1);
     }
+
+    /// Both halves registered, with the calibration the tests above explain.
+    fn pair(env: &Env) -> (callee::Client<'_>, ObserverClient<'_>, Address) {
+        env.mock_all_auths_allowing_non_root_auth();
+        let ledger_id = env.register(callee::WASM, ());
+        let observer_id = env.register(Observer, ());
+        (
+            callee::Client::new(env, &ledger_id),
+            ObserverClient::new(env, &observer_id),
+            ledger_id,
+        )
+    }
+
+    /// The nested authorization is genuinely required, which is the property the live
+    /// test depends on when it needs `--auth-mode non-root` to reach the callee.
+    ///
+    /// The root-only mock is the same one the first test explains, used here for the
+    /// opposite purpose: to show that it is *not* sufficient, so the requirement is
+    /// demonstrated rather than only asserted in a comment.
+    #[test]
+    #[should_panic(expected = "InvalidAction")]
+    fn record_via_is_refused_without_the_nested_authorization() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let ledger_id = env.register(callee::WASM, ());
+        let observer = ObserverClient::new(&env, &env.register(Observer, ()));
+        let account = Address::generate(&env);
+
+        observer.record_via(&ledger_id, &account, &1);
+    }
+
+    /// A read-only cross-contract call must not be able to advance anything.
+    #[test]
+    fn observe_changes_no_state() {
+        let env = Env::default();
+        let (ledger, observer, ledger_id) = pair(&env);
+        let account = Address::generate(&env);
+
+        ledger.record(&account, &4);
+
+        assert_eq!(observer.observe(&ledger_id, &account), 1);
+        assert_eq!(observer.observe(&ledger_id, &account), 1);
+        assert_eq!(ledger.sequence(&account), 1);
+    }
+
+    /// Each authenticated call through the caller advances the callee exactly once.
+    #[test]
+    fn record_via_advances_the_callee_once_per_call() {
+        let env = Env::default();
+        let (ledger, observer, ledger_id) = pair(&env);
+        let account = Address::generate(&env);
+
+        assert_eq!(observer.record_via(&ledger_id, &account, &1), 1);
+        assert_eq!(observer.record_via(&ledger_id, &account, &2), 2);
+        assert_eq!(observer.record_via(&ledger_id, &account, &3), 3);
+        assert_eq!(ledger.sequence(&account), 3);
+    }
+
+    /// Two accounts driven through the same caller stay separate in the callee, so an
+    /// edge recovered from the caller cannot be attributed to the wrong account.
+    #[test]
+    fn record_via_tracks_each_account_separately() {
+        let env = Env::default();
+        let (ledger, observer, ledger_id) = pair(&env);
+        let first = Address::generate(&env);
+        let second = Address::generate(&env);
+
+        observer.record_via(&ledger_id, &first, &1);
+        assert_eq!(observer.observe(&ledger_id, &first), 1);
+        assert_eq!(observer.observe(&ledger_id, &second), 0);
+        assert_eq!(ledger.sequence(&second), 0);
+    }
 }

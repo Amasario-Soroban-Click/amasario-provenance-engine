@@ -87,22 +87,131 @@ impl Ledger {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Env};
+    use soroban_sdk::{
+        testutils::{Address as _, Events as _},
+        Env,
+    };
+
+    /// The number of contract events published by the invocation just made.
+    fn events(env: &Env) -> usize {
+        env.events().all().events().len()
+    }
+
+    /// A deployed instance and a funded-looking account, so no test repeats setup.
+    fn ledger(env: &Env) -> (LedgerClient<'_>, Address) {
+        env.mock_all_auths();
+        let contract_id = env.register(Ledger, ());
+        (
+            LedgerClient::new(env, &contract_id),
+            Address::generate(env),
+        )
+    }
 
     /// `require_auth` must actually gate the write, and the sequence must advance
     /// exactly once per recorded call.
     #[test]
     fn record_requires_auth_and_advances_the_sequence() {
         let env = Env::default();
-        env.mock_all_auths();
-
-        let contract_id = env.register(Ledger, ());
-        let client = LedgerClient::new(&env, &contract_id);
-        let account = Address::generate(&env);
+        let (client, account) = ledger(&env);
 
         assert_eq!(client.sequence(&account), 0);
         assert_eq!(client.record(&account, &10), 1);
         assert_eq!(client.record(&account, &20), 2);
         assert_eq!(client.sequence(&account), 2);
+    }
+
+    /// The authorization surface is real, not decorative.
+    ///
+    /// `mock_all_auths` is deliberately *not* called here. `record` calls
+    /// `require_auth` on an account that authorized nothing, so the host must refuse
+    /// the invocation. A contract whose `require_auth` could be skipped would still
+    /// produce a module the engine reads correctly, but `record` claims an
+    /// authorization requirement in its interface, and this is what makes that claim
+    /// checkable rather than aspirational.
+    #[test]
+    #[should_panic(expected = "InvalidAction")]
+    fn record_is_refused_without_the_account_s_authorization() {
+        let env = Env::default();
+        let contract_id = env.register(Ledger, ());
+        let client = LedgerClient::new(&env, &contract_id);
+        let account = Address::generate(&env);
+
+        client.record(&account, &1);
+    }
+
+    /// One account's calls must not be reported against another's.
+    #[test]
+    fn sequence_is_tracked_per_account() {
+        let env = Env::default();
+        let (client, first) = ledger(&env);
+        let second = Address::generate(&env);
+
+        client.record(&first, &1);
+        client.record(&first, &1);
+        client.record(&second, &1);
+
+        assert_eq!(client.sequence(&first), 2);
+        assert_eq!(client.sequence(&second), 1);
+    }
+
+    /// An account that has never been recorded reads as zero rather than as an error.
+    ///
+    /// Worth pinning: the engine's read-only cross-contract probe calls this on
+    /// accounts with no history, so an unwrap on a missing key would turn the
+    /// commonest invocation into a network error.
+    #[test]
+    fn sequence_of_an_account_that_never_recorded_is_zero() {
+        let env = Env::default();
+        let (client, _) = ledger(&env);
+
+        assert_eq!(client.sequence(&Address::generate(&env)), 0);
+    }
+
+    /// The event the engine's live analysis reads must actually be published.
+    #[test]
+    fn record_publishes_one_event() {
+        let env = Env::default();
+        let (client, account) = ledger(&env);
+
+        assert_eq!(events(&env), 0);
+        client.record(&account, &5);
+        assert_eq!(events(&env), 1);
+    }
+
+    /// ...and the read-only function must not publish one, because the engine
+    /// classifies observed state changes from what an invocation emitted.
+    ///
+    /// `env.events().all()` reports the events of the *most recent* invocation, not of
+    /// the whole test, so each assertion here follows the call it is about. That is
+    /// worth pinning rather than working around: the engine's live analysis attributes
+    /// an event to the invocation that emitted it, so a contract whose reads looked
+    /// like writes would be reported as changing state it does not touch.
+    #[test]
+    fn sequence_publishes_no_event() {
+        let env = Env::default();
+        let (client, account) = ledger(&env);
+
+        client.sequence(&account);
+        assert_eq!(events(&env), 0);
+
+        client.record(&account, &1);
+        assert_eq!(events(&env), 1);
+
+        client.sequence(&account);
+        assert_eq!(events(&env), 0);
+    }
+
+    /// The amount is recorded but does not influence the sequence, so a reader can
+    /// tell the two apart in the event rather than having to assume one from the
+    /// other.
+    #[test]
+    fn the_amount_does_not_change_the_sequence() {
+        let env = Env::default();
+        let (client, account) = ledger(&env);
+
+        assert_eq!(client.record(&account, &0), 1);
+        assert_eq!(client.record(&account, &-1), 2);
+        assert_eq!(client.record(&account, &i128::MAX), 3);
+        assert_eq!(client.sequence(&account), 3);
     }
 }
