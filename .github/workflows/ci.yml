@@ -84,11 +84,30 @@ jobs:
           tar -xzf "${archive}" actionlint
           ./actionlint -color .github/workflows/*.yml
 
+      # Every one of these commands names `--workspace`, and that is not a style
+      # preference. The root manifest is a package as well as a workspace - it holds the
+      # benchmarks - so a bare `cargo test`, `cargo clippy` or `cargo doc` in this
+      # directory operates on the root package only. The root package has no library and
+      # no binary, so a bare `cargo test` builds nothing, runs nothing and exits zero: a
+      # green step that verified none of the twelve crates. A bare `cargo test --doc`
+      # fails outright with `no library targets found in package `amasario``. Neither
+      # outcome is visible from the workflow's status, which is exactly why the flag is
+      # spelled out on each command rather than left to the default.
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      # The integration suites run the `amasario` binary and locate it relative to their
+      # own test executable, so it has to exist before they run. `cargo test` does not
+      # produce it: a binary is built as a test harness under `target/<profile>/deps/`,
+      # not as the runnable artefact in `target/<profile>/`. Building the workspace first
+      # is therefore part of running the suite, not an optimisation - without it the two
+      # CLI suites in `integration-tests/snapshots` fail with the message that names this
+      # command. `scripts/run-ci.sh` has always built before testing; this job did not.
+      - name: Building
+        run: cargo build --workspace --all-features
 
       - name: Tests
-        run: cargo test --all-features
+        run: cargo test --workspace --all-features
 
       # The examples under `examples/` are executable documentation, so they are checked
       # rather than trusted. The offline ones are re-run and compared against their
@@ -107,7 +126,7 @@ jobs:
         run: cargo test -p amasario-core --all-features -- --include-ignored
 
       - name: Documentation builds without warnings
-        run: cargo doc --no-deps --document-private-items
+        run: cargo doc --workspace --no-deps --all-features --document-private-items
 
       - name: Documentation examples compile
-        run: cargo test --doc
+        run: cargo test --workspace --all-features --doc
