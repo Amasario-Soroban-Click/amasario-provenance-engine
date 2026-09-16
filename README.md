@@ -131,6 +131,33 @@ because they read a checkout of the normative specification; CI provides one and
 them with `--include-ignored`. Nine ignored tests are therefore expected in a plain
 `cargo test` run, and none of them are skipped work.
 
+### Coverage
+
+Measured with `cargo llvm-cov --workspace --all-features`, which instruments the workspace
+and runs the same suite:
+
+| Measure | Covered | Total | |
+| --- | --- | --- | --- |
+| Lines | 29,427 | 33,387 | **88.14%** |
+| Regions | 46,224 | 51,790 | 89.25% |
+| Functions | 3,193 | 3,613 | 88.38% |
+
+Per crate, by line coverage: `amasario-graph` 97.39%, `amasario-provenance` 96.47%,
+`amasario-evidence` 96.37%, `amasario-dependency` 96.00%, `amasario-core` 94.42%,
+`amasario-network` 92.82%, `amasario-impact` 92.37%, `amasario-export` 87.63%,
+`amasario-contract` 85.65%, `amasario-snapshot` 85.29%, `amasario-report` 79.79%.
+
+Two figures are worth reading with their caveats rather than as scores. `amasario-cli`
+reports 23.92%, and the number is an artefact of how the CLI is tested rather than a
+statement about it: its commands run inside the spawned `amasario` binary, which
+`cargo llvm-cov` does not build (it runs `cargo test --tests`), so the integration suite's
+exercise of the CLI is real but unattributed. That same gap is why the `snapshots` suite
+needs a separate `cargo build` before it can run at all under `cargo llvm-cov`, which is
+[issue #41](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/issues/41).
+Coverage is therefore reported here as measured and reproducible, and is not yet a CI gate:
+[issue #45](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/issues/45)
+is the work to close it, with the figures above as the target to hold.
+
 Nothing in the table is a placeholder: a crate is listed as implemented only when it
 compiles, is lint-clean and has tests. A crate that does not exist yet is not listed
 as existing.
