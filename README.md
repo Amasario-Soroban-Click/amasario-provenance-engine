@@ -275,6 +275,7 @@ reproduce each vector's canonical serialisation and digest byte for byte.
 | [`docs/testnet.md`](docs/testnet.md) | Running against testnet, and the observation boundary |
 | [`docs/ci-integration.md`](docs/ci-integration.md) | Using the engine as a build gate |
 | [`docs/security.md`](docs/security.md) | The security boundaries, stated as what the tool does not claim |
+| [`docs/fuzzing.md`](docs/fuzzing.md) | The five fuzz targets, what each asserts, and how a failure is read |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | Exit codes, and each failure mode with its cause and remedy |
 | [`examples/README.md`](examples/README.md) | Nine worked examples, and which of them run without a network |
 
