@@ -40,10 +40,10 @@ jobs:
           key: ${{ matrix.os }}
 
       - name: Build
-        run: cargo build --all-features --verbose
+        run: cargo build --workspace --all-features --verbose
 
       - name: Test
-        run: cargo test --all-features
+        run: cargo test --workspace --all-features
 
   msrv:
     name: minimum supported Rust version
@@ -59,13 +59,32 @@ jobs:
       # because `rust-toolchain.toml` takes precedence over the default and would
       # otherwise make this job silently build with the pinned toolchain - a check
       # that always passes because it is not running.
+      # The version is read with `sed` rather than with `grep ... | cut`, and the
+      # difference is not cosmetic. The root manifest is a package as well as a
+      # workspace, so it contains both `rust-version.workspace = true` in `[package]`
+      # and the real `rust-version = "1.93"` in `[workspace.package]`. `grep -m1
+      # '^rust-version'` matches the first of those, and `cut -d'"' -f2` on a line with
+      # no quote character in it returns the line itself - so the version this job
+      # installed was the literal string `rust-version.workspace = true`, and rustup
+      # rejected it with `invalid toolchain name`. The job failed on every run for a
+      # reason that had nothing to do with the minimum it was meant to check.
+      #
+      # The `sed` expression requires the quote and the `=` after the key, so it matches
+      # only a key that actually carries a value, and `release.sh` reads the same file
+      # the same way. `head -1` keeps the answer stable if a second key of the same name
+      # is ever added.
       - name: Install the declared minimum toolchain
         run: |
-          version="$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)"
+          version="$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' Cargo.toml | head -1)"
+          if [ -z "${version}" ]; then
+            echo "::error title=No rust-version::Cargo.toml declares no rust-version, so the \
+          minimum this repository claims cannot be checked. Add one to [workspace.package]."
+            exit 1
+          fi
           echo "checking against rust-version = ${version}"
           rustup toolchain install "${version}" --profile minimal
 
       - name: Build against the declared minimum
         run: |
-          version="$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)"
-          cargo "+${version}" build --all-features
+          version="$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' Cargo.toml | head -1)"
+          cargo "+${version}" build --workspace --all-features
