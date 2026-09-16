@@ -17,9 +17,9 @@ there means the engine, or the world the committed target was chosen from, has c
 
 **Soroban contract dependency, provenance and impact infrastructure.**
 
-### The engine is not a contract, and it deploys nothing
+### The engine is not a contract, and it holds no key
 
-Amasario analyses Soroban contracts; it is not one. No crate in the engine's workspace
+Amasario analyses Soroban contracts; the engine is not one. No crate in the workspace
 depends on `soroban-sdk`, compiles to a deployable module, or declares a contract entry
 point, and no command submits a transaction, holds a key or signs anything. The
 organisation and the repository names say "Soroban" because that is the ecosystem this
@@ -36,15 +36,32 @@ so nothing else exercises `contractspecv0` decoding, `contractenvmetav0` reading
 section walk against bytes the real toolchain emitted - and because the two form a
 deliberate call graph, `caller -> callee` is an edge the engine is asserted to find rather
 than borrowed from a contract on testnet that this project does not own. They are not part
-of the engine: nothing in the engine depends on them, and their build is its own workflow.
+of the engine's workspace: nothing in the engine depends on them, and their build is its own
+workflow.
 
-The engine holding no contract of its own is what decides what is worth reviewing here.
-There is no authorisation surface, storage lifetime, upgrade path or arithmetic to audit,
-and no key handling of any kind, because the engine holds no key and signs nothing. What
-is worth reviewing is the surface [`SECURITY.md`](SECURITY.md) describes: parsing
-untrusted input without panicking, and never asserting more than the recorded evidence
-supports. Read this repository as read-only analysis infrastructure, and the rest of the
-documentation says what it will and will not claim about the contracts it examines.
+**Both halves are deployed to Testnet, and that is deliberate.** The callee is
+[`CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N`](https://stellar.expert/explorer/testnet/contract/CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N)
+and the caller is
+[`CBNCEDVA7SQ2NSNGG7RGQOK4VESBN2YSCLJ6DSHRL6QH72VPR5MYIVCA`](https://stellar.expert/explorer/testnet/contract/CBNCEDVA7SQ2NSNGG7RGQOK4VESBN2YSCLJ6DSHRL6QH72VPR5MYIVCA).
+Both deployed modules hash to the committed fixtures, so the divergence between "the module
+this repository builds" and "the module that is running" is zero, and it is checked on the
+chain rather than asserted here. `amasario discover` then observes the caller entering the
+callee in [`a9445fb5…`](https://stellar.expert/explorer/testnet/tx/a9445fb5f4b3896d673e5089b19841469dea8683806de1cc32fce914e2be5268) — a cross-contract
+relationship between two contracts this project owns, established from evidence rather than
+read out of a fixture. [`scripts/deploy-reference-contract.sh`](scripts/deploy-reference-contract.sh)
+reproduces the deployment and refuses to report one it has not checked against the fixture
+digest; [`docs/testnet.md`](docs/testnet.md) records the transactions and explains why the
+**callee** is the subject worth asking, not the caller.
+
+So there is a contract surface to review here, and it is small on purpose: the callee has an
+authorisation surface, a storage lifetime and one arithmetic operation, across roughly two
+hundred lines including its tests, written to be read. What is *not* here is still the
+larger part of the claim — the engine holds no key and signs nothing, no command it ships
+has a mutating mode, and what is worth reviewing in it is the surface
+[`SECURITY.md`](SECURITY.md) describes: parsing untrusted input without panicking, and never
+asserting more than the recorded evidence supports. Read this repository as read-only
+analysis infrastructure, and the rest of the documentation says what it will and will not
+claim about the contracts it examines.
 
 This repository is `amasario-provenance-engine`, the **execution and analysis layer**
 of Amasario. It consumes the normative models, schemas, rules and vectors defined by
@@ -81,7 +98,7 @@ is more persuasive than the JSON under it, and the explorer is built so that the
 cannot say more than the table beside it.
 
 [`amasario-docs`](https://github.com/Amasario-Soroban-Click/amasario-docs) is the
-**documentation** layer, and it is split by ownership rather than by topic. What a document
+**cross-cutting** layer, and it is split by ownership rather than by topic. What a document
 *means* is normative and lives in the specification. What this engine *does*, and what it
 refuses to claim, lives in [`docs/`](docs/) here. What cuts across both — the architecture
 between the layers, the compatibility policy, governance and the gaps that are known and

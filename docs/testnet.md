@@ -45,6 +45,94 @@ Without `--horizon`, the deployment links of the provenance chain are `UNVERIFIE
 report says why. Without `--scan-events`, contract-to-contract dependencies are only
 discoverable from transaction and operation history, which is thinner.
 
+## The first-party reference contract on Testnet
+
+`reference-contract/` is deployed to Testnet, and it is the only thing this project
+deploys. Two contracts, both built from this repository's source, both committed as the
+fixtures under `fixtures/reference/`:
+
+| | Contract | Committed module digest |
+| --- | --- | --- |
+| callee — `Ledger` | `CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N` | `347286105091f6d2d5db47ef5ae4442550a4d18f3a0f11284b59c22211031ac7` |
+| caller — `Observer` | `CBNCEDVA7SQ2NSNGG7RGQOK4VESBN2YSCLJ6DSHRL6QH72VPR5MYIVCA` | `b361a71a39976897beb916fc85faa5670617ff95d68a5cecb00e7deabcedb7b7` |
+
+The deployer is `GATPEYEMBUZB655G323G5AIR77JSYFVK354EI6V7RVWWXGYMTHEIYTHZ`, and the four
+transactions below are on Testnet rather than described from a local run. Each was read
+back from the network by `getTransaction`, and every one reported `SUCCESS`:
+
+| Transaction | Ledger | What it did |
+| --- | --- | --- |
+| [`82e7727b…`](https://stellar.expert/explorer/testnet/tx/82e7727b4b10710fc67515fab61449e4790e969aaac631ccdcf08543df9a9a73) | 4710122 | deployed the callee |
+| [`e8331640…`](https://stellar.expert/explorer/testnet/tx/e8331640d0fa6a6a92a4d72bb1206eaafd74a3d92acf0efd0da6a90f44d3a847) | 4710123 | deployed the caller |
+| [`9f80b7dc…`](https://stellar.expert/explorer/testnet/tx/9f80b7dc5f14616a095448b464985604be5f61c1d8600c42f4710ce2642b6fd3) | 4710124 | the read-only cross-contract call, `caller -> callee` |
+| [`a9445fb5…`](https://stellar.expert/explorer/testnet/tx/a9445fb5f4b3896d673e5089b19841469dea8683806de1cc32fce914e2be5268) | 4710125 | the authenticated call, which reached the callee's `require_auth` one frame down and emitted its `recorded` event |
+
+### Reproducing it
+
+The commands are committed, because a deployment that only ever happened on someone's
+machine is a deployment nobody can check:
+
+```bash
+scripts/build-reference-contract.sh          # stage the modules the fixtures hold
+scripts/deploy-reference-contract.sh --invoke
+```
+
+The script deploys the **fixtures**, not `target/`, and then checks the result with this
+repository's own `amasario inspect`: it compares the wasm hash the chain reports against
+the fixture's sha256, and stops if they differ. So a deployment it reports as successful is
+one where the bytes on the chain and the bytes in the repository are the same bytes. Run
+without `--invoke` it deploys and verifies only, and sends no transaction.
+
+An identity is needed and the script does not create one, because a funded account is a
+decision about whose account it is:
+
+```bash
+stellar keys generate <name> --network testnet --fund
+scripts/deploy-reference-contract.sh --identity <name> --invoke
+```
+
+No secret is in this repository, and the engine holds no key: the script names an identity
+and the `stellar` CLI signs with the one in its own keystore.
+
+### What the deployment is evidence for
+
+Both deployed modules hash to the committed fixtures, so the divergence between “the module
+this repository builds” and “the module that is running” is zero and is checked on the
+chain rather than asserted in prose.
+
+The cross-contract edge is then observable, which is the point of deploying both halves:
+
+```console
+$ amasario discover --contract CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N \
+    --network testnet --scan-events
+discovery   CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N
+observed    1 transaction(s) read, 1 invocation(s) seen
+
+CBNCEDVA7SQ2NSNGG7RGQOK4VESBN2YSCLJ6DSHRL6QH72VPR5MYIVCA - entered the target
+  transactions: a9445fb5f4b3896d673e5089b19841469dea8683806de1cc32fce914e2be5268
+```
+
+**The subject matters, and the asymmetry is worth understanding rather than working
+around.** The engine's evidence for a cross-contract relationship is an *event*: it reads
+the events a contract emitted, then the transactions those events appeared in, and derives
+from them what that contract called and what called it. Here only the callee publishes an
+event, so asking the *caller* about its dependencies establishes nothing:
+
+```console
+$ amasario dependencies --contract CBNCEDVA7SQ2NSNGG7RGQOK4VESBN2YSCLJ6DSHRL6QH72VPR5MYIVCA \
+    --network testnet --scan-events
+evidence     0 invocation(s) observed from 0 transaction(s) read
+
+no dependency was established. This is the absence of evidence, not evidence of the
+absence of a dependency: a call that left no trace on the chain cannot be observed.
+```
+
+That is the tool working as documented, not a gap in it, and the caller contract is
+written the way it is on purpose. A reader who expects `dependencies` on the caller to
+report the callee has a reasonable expectation and a wrong model, so it is stated here: ask
+the contract that *emitted* something. This is also why a fresh deployment with no
+invocations shows nothing — the edge is history, and the history has to be made.
+
 ## The snapshot workflow
 
 ```bash
@@ -103,7 +191,7 @@ Environment:
 | `AMASARIO_BIN` | The binary to run. Defaults to the release build, then the debug build, then `PATH`. |
 | `AMASARIO_RPC` | The RPC endpoint, which `mainnet` and `futurenet` need. |
 | `AMASARIO_ARTIFACTS` | Where the outputs are written. Unset, they go to a temporary directory that is removed on exit. |
-| `AMASARIO_LOOKBACK` | How many ledgers of history the event scan covers. Defaults to the CLI's 256, about a day. |
+| `AMASARIO_LOOKBACK` | How many ledgers of history the event scan covers. Defaults to the CLI's 256, which at Stellar's roughly five-second close time is about twenty minutes. |
 
 ## Local and private chains
 
