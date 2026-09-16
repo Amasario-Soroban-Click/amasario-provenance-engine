@@ -71,7 +71,7 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | `amasario-contract` | Contract inspection: identity, executable hash, interface, storage | implemented, 109 tests |
 | `amasario-provenance` | Source → build → artifact → wasm → deployment verification | implemented, 113 tests |
 | `amasario-dependency` | Dependency discovery, classification and resolution | implemented, 102 tests |
-| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 107 tests |
+| `amasario-graph` | Typed graph construction, traversal, paths, cycle detection | implemented, 108 tests |
 | `amasario-impact` | Direct, transitive and multi-hop impact analysis | implemented, 76 tests |
 | `amasario-evidence` | Evidence collection, verification and confidence calculation | implemented, 83 tests |
 | `amasario-snapshot` | Snapshot capture, normalization, storage and comparison | implemented, 46 tests |
@@ -79,17 +79,21 @@ counts are the ones `cargo test --workspace --all-features` reports, not estimat
 | `amasario-export` | JSON, YAML, GraphML and DOT export | implemented, 27 tests |
 | `amasario-cli` | The `amasario` binary: inspect, discover, provenance, dependencies, graph, impact, snapshot, diff, verify, report, export | implemented, 31 tests |
 
-`cargo test --workspace --all-features` passes **1088 tests**, of which 974 are the unit
-and per-crate suites of the twelve crates above and 114 are the ten end-to-end suites
-in `integration-tests` — `network`, `captures`, `contracts`, `provenance`, `dependencies`,
-`graphs`, `impact`, `snapshots`, `verification` and `reports`.
+`cargo test --workspace --all-features` passes **1102 tests**, of which 975 are the unit,
+per-crate and doctest suites of the twelve crates above and 127 are the eleven end-to-end
+suites in `integration-tests` — `network`, `captures`, `contracts`, `provenance`,
+`dependencies`, `graphs`, `impact`, `snapshots`, `verification`, `reports` and
+`reference`.
 
-Six of those 114 do not generate anything: `captures` serves the four responses under
-`fixtures/` that were read off testnet verbatim, over a real socket, into the adapters'
-own client — the suite that exists because three live defects were invisible in every
-hand-written document. The other eight suites run against a generated corpus. None of the
-ten reaches the live network, so CI does not go flaky because a public endpoint was busy;
-the live test is `testnet.yml`, which is scheduled rather than triggered by a pull request.
+Two of those suites read fixtures the corpus generator does not produce. `captures`
+serves the four responses under `fixtures/` that were read off testnet verbatim, over a
+real socket, into the adapters' own client — the suite that exists because three live
+defects were invisible in every hand-written document. `reference` reads the modules this
+repository's own contracts build, staged by `scripts/build-reference-contract.sh` and
+committed under `fixtures/reference/`. The other nine run against a generated corpus.
+None of the eleven reaches the live network, so CI does not go flaky because a public
+endpoint was busy; the live test is `testnet.yml`, which is scheduled rather than
+triggered by a pull request.
 
 The nine specification-conformance tests in `amasario-core` are `#[ignore]`d by default
 because they read a checkout of the normative specification; CI provides one and runs
