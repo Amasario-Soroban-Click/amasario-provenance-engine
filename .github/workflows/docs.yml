@@ -29,7 +29,7 @@ jobs:
     name: rustdoc and doctests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
         run: rustup show
@@ -50,7 +50,7 @@ jobs:
     name: Markdown links resolve
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Check relative links in the documentation
         run: |
