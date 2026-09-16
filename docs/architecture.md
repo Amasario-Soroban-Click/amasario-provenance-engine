@@ -1,13 +1,23 @@
 # Architecture
 
-Amasario is two repositories with one boundary between them.
+The organisation is four repositories. This page describes the one boundary this
+repository owns — the crate stack inside it, and what each crate may reach — and says only
+enough about the other three to place it. The seams *between* repositories are in
+[`amasario-docs`](https://github.com/Amasario-Soroban-Click/amasario-docs/blob/main/docs/architecture.md),
+because no single repository can be the authority on them.
 
-| Repository | Responsibility |
-| --- | --- |
-| `amasario-provenance-spec` | Defines what contract identity, artifact identity, provenance, dependencies, evidence, confidence, snapshots and impact *mean*. Normative, versioned, machine-readable. |
-| `amasario-provenance-engine` | Executes that specification against real networks: inspects contracts, collects evidence, resolves dependencies, builds graphs, verifies provenance, propagates impact, captures snapshots, compares them and writes reports. |
+| Layer | Repository | Responsibility |
+| --- | --- | --- |
+| Normative | `amasario-provenance-spec` | Defines what contract identity, artifact identity, provenance, dependencies, evidence, confidence, snapshots and impact *mean*. Normative, versioned, machine-readable. |
+| Execution | `amasario-provenance-engine` | Executes that specification against real networks: inspects contracts, collects evidence, resolves dependencies, builds graphs, verifies provenance, propagates impact, captures snapshots, compares them and writes reports. This repository. |
+| Presentation | `amasario-explorer` | Renders documents this repository produced, and analyses nothing itself. |
+| Cross-cutting | `amasario-docs` | The seams between the layers: policy, compatibility and the known gaps. |
 
-This repository is the second one. It consumes the specification's schemas, taxonomies
+The rows above are a reading order, not a dependency chain: the explorer depends on
+committed documents rather than on this repository's code, which is why it can be written
+in another language and why a change here cannot silently change a rendered picture.
+
+This repository is the execution layer. It consumes the specification's schemas, taxonomies
 and rules; it does not redefine them. Where an implementation type is needed to carry a
 normative concept, that type is named after the concept and validated against the
 specification's own vocabulary rather than a locally invented one.
