@@ -1,22 +1,118 @@
-# A workspace of its own, deliberately detached from the engine's.
+# The fuzz targets, as a workspace of its own, deliberately detached from the engine's.
 #
-# The five targets need `libfuzzer-sys`, which links a C++ fuzzing runtime and is built
-# with a sanitizer under `cargo fuzz`. Keeping them in a separate workspace means the
-# engine's `cargo test --workspace` stays a plain, fast, stable-toolchain build, and a
-# fuzzer cannot accidentally become a dependency of a published crate. The targets each
-# depend on the engine crates by path, so they exercise the same source the tests do.
+# The targets need `libfuzzer-sys`, which links a C++ fuzzing runtime and is built with a
+# sanitizer under `cargo fuzz`, and they need a nightly toolchain to drive `-Zsanitizer`.
+# Keeping them separate means the engine's `cargo test --workspace` stays a plain, fast,
+# stable-toolchain build, and a fuzzer cannot accidentally become a dependency of a
+# published crate. The targets depend on the engine crates by path, so they exercise the
+# same source the tests do.
+#
+# This file was a virtual workspace manifest listing five member crates, one per target,
+# and that layout cannot be driven by `cargo fuzz` at all: cargo-fuzz reads
+# `fuzz/Cargo.toml` and requires it to be a *package* carrying the marker below, so
+# `cargo fuzz list` failed with
+#
+#     Error: manifest `fuzz/Cargo.toml` does not look like a cargo-fuzz manifest.
+#     Add following lines to override:
+#     [package.metadata]
+#     cargo-fuzz = true
+#
+# and `cargo fuzz run <target>` failed the same way. Nothing noticed because the workflow
+# that runs them decided whether to run at all by looking for a `fuzz_targets` directory
+# that this layout did not have, so it skipped every step and reported success. The five
+# targets were unrunnable and their job was green.
+#
+# The layout is now the one cargo-fuzz documents: one package, one `fuzz_targets/`
+# directory, one `[[bin]]` per target. The target *names* are unchanged, because those are
+# the interface - they are what `cargo fuzz list` prints, what the workflow loops over and
+# what `docs/fuzzing.md` tells a reader to type.
 #
 # Usage:
-#   cargo fuzz run <target>          # with cargo-fuzz installed
+#   cargo fuzz run <target>          # with cargo-fuzz and a nightly toolchain installed
 #   cargo build --workspace          # from this directory, to check they compile
 #
 # See `docs/fuzzing.md` for what each target explores and how a failure is read.
+# A workspace of its own, stated rather than implied. This directory sits inside the engine's
+# workspace root, and a package there is a member of it unless it declares otherwise - so
+# without this table the engine's `cargo test --workspace` would try to build
+# `libfuzzer-sys` and the nightly-only sanitizer flags it needs, on the stable toolchain
+# the engine pins. Cargo says as much when it happens: "this may be fixable by adding
+# `fuzz` to the `workspace.members` array ... or add an empty `[workspace]` table to the
+# package's manifest". The previous layout was a virtual workspace manifest, which was
+# already a workspace root and needed no statement.
 [workspace]
-resolver = "3"
-members = [
-  "provenance-fuzzer",
-  "dependency-fuzzer",
-  "graph-fuzzer",
-  "impact-fuzzer",
-  "snapshot-fuzzer",
-]
+
+[package]
+name = "amasario-fuzz"
+description = "Fuzz targets for the Amasario provenance, dependency, graph, impact and snapshot layers."
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+# One binary per target, because that is what cargo-fuzz builds and runs: each target is a
+# separate process with its own fuzzing loop, corpus and crash directory.
+#
+# `test`, `doc` and `bench` are turned off for the reason the previous manifests gave - a
+# fuzz target is not a test, a bench or a doc example, and saying so keeps `cargo test` in
+# this workspace from running the fuzzer as though it were one. It matters more now that
+# the targets share a package: without it, `cargo test` would build every fuzzer as a test
+# target.
+
+[[bin]]
+name = "provenance-fuzzer"
+path = "fuzz_targets/provenance-fuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "dependency-fuzzer"
+path = "fuzz_targets/dependency-fuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "graph-fuzzer"
+path = "fuzz_targets/graph-fuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "impact-fuzzer"
+path = "fuzz_targets/impact-fuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "snapshot-fuzzer"
+path = "fuzz_targets/snapshot-fuzzer.rs"
+test = false
+doc = false
+bench = false
+
+# The union of what the five targets use, because a package has one dependency set and the
+# targets are binaries of one package. A target therefore links crates it does not call -
+# `snapshot-fuzzer` does not reach `amasario-impact` - and that is the cost of the layout
+# cargo-fuzz requires. It is a build-time cost in a workspace that is never published and
+# never built by the engine's pipeline, so it is paid only by a fuzz run.
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = "1"
+serde_json = "1"
+
+amasario-contract = { path = "../crates/amasario-contract" }
+amasario-core = { path = "../crates/amasario-core" }
+amasario-dependency = { path = "../crates/amasario-dependency" }
+amasario-graph = { path = "../crates/amasario-graph" }
+amasario-impact = { path = "../crates/amasario-impact" }
+amasario-provenance = { path = "../crates/amasario-provenance" }
+amasario-snapshot = { path = "../crates/amasario-snapshot" }
+
+[lints.rust]
+unsafe_code = "forbid"
