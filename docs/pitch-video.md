@@ -5,10 +5,14 @@ visual named below exists in this repository or in the deployed explorer, so not
 staged except the browser.
 
 **Recorded.** Watch it at
-[amasario-explorer.vercel.app/pitch/amasario-pitch-v1.mp4](https://amasario-explorer.vercel.app/pitch/amasario-pitch-v1.mp4)
+[amasario-explorer.vercel.app/pitch/amasario-pitch-v2.mp4](https://amasario-explorer.vercel.app/pitch/amasario-pitch-v2.mp4)
 — five minutes, 1080p, narrated. The file is served by the explorer's deployment rather than
 by a video host, so the link does not depend on a third-party account staying open, and the
 README carries the thumbnail badge beside the others.
+
+`v2` is the current recording and includes the Testnet deployment of the reference contract —
+the engine observing its own deployment on chain, and refusing to answer a question that
+deployment left no evidence for. [Versions](#versions) records what changed from `v1` and why.
 
 This page remains the script. Where the recording and the script disagree, the recording is
 what was said and this page is what was intended; where either disagrees with the documents
@@ -30,6 +34,7 @@ sentence, and anything that does not should be cut when the recording runs long.
 | Graph fixtures view | <https://amasario-explorer.vercel.app/#/graphs> | Scene 5 |
 | Snapshot diff | <https://amasario-explorer.vercel.app/#/snapshots> | Scene 5 |
 | Reference contract view | <https://amasario-explorer.vercel.app/#/contracts> | Scene 5, 6 |
+| The deployment, observed on chain | In `docs/testnet.md`, the two `console` blocks recording `amasario discover` against each deployed contract | Scene 5 |
 | Organisation page | <https://github.com/Amasario-Soroban-Click> | Scene 4 |
 | Verification status table | `docs/verification.md`, scrolled to the table | Scene 3 |
 | A bounded result from a terminal | `amasario dependencies --contract CDKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJJM5 --depth 1` | Scene 3 |
@@ -139,26 +144,20 @@ pace; let each view sit for two seconds before a slow zoom onto the data table.
 
 > "And the reference contract: a caller and a callee built from source in the project, whose
 > compiled bytes are committed with their digests and rebuilt in CI to prove the build is
-> reproducible. It is here to be analysed, not deployed."
+> reproducible."
 
-**Superseded after the recording was made.** The last sentence was true when the video was
-rendered and is not true now: both halves are deployed to Testnet, with the deployed modules
-hashing to the committed fixtures, and [testnet.md](testnet.md) records the contract IDs and
-the transaction in which the caller entered the callee.
+**The script is the part that is out of date here, not the recording.** This scene was written
+before either half was deployed, and its closing sentence — *it is here to be analysed, not
+deployed* — was true then and is false now. Both halves are on Testnet, with the deployed
+modules hashing to the committed fixtures, and [testnet.md](testnet.md) records the contract
+IDs and the transaction in which the caller entered the callee.
 
-The audio is left as recorded rather than re-cut, and the trade is stated rather than hidden.
-Re-cutting means re-recording the narration line, which shifts every later shot's timing,
-because shot durations are derived from the narration - so the cost is a full re-render rather
-than an edit. What a viewer of the recording alone is misled about is one clause: that the
-fixture is a fixture. What they are *not* misled about is the claim the clause exists to
-support, which is that the bytes are committed and that CI rebuilds them and compares - both
-still true, and both what the sentence is doing the work of.
-
-Being explicit about the direction of the correction: this page is the script, the recording
-is what was said, and the documents are what the project claims. Where the recording is out
-of date with the documents, the documents are right - which is this paragraph's whole point.
-A re-render is the only thing that removes the discrepancy, and the render is reproducible
-from this page, so it is a matter of running it again rather than of recovering anything.
+The recording in `v2` does not say that sentence. It replaces it with the deployment itself:
+the engine reading the callee's own event to name the caller that entered it, and then
+declining to answer the same question asked in the other direction, because that call left no
+trace to read. That is the project's governing rule demonstrated on a live deployment rather
+than argued from a fixture, which is a better use of the half-minute than the sentence it
+replaced — and it is what `v1` was missing.
 
 > "Notice what the explorer does not do. It does not fetch, it does not parse WebAssembly, and it
 > does not compute a single value. It is a viewer, deliberately, so the picture cannot claim more
@@ -234,4 +233,24 @@ quietly dropping:
 Two properties are checked rather than asserted. Every shot is confirmed to be on screen at
 its expected time by decoding a frame and comparing it against the image that shot was built
 from, and every narration clip is confirmed to begin within a tenth of a second of where the
-timeline places it. Both checks are in the build described below.
+timeline places it.
+
+## Versions
+
+| Version | What it is |
+| --- | --- |
+| [`v2`](https://amasario-explorer.vercel.app/pitch/amasario-pitch-v2.mp4) | Current. Adds Scene 5's Testnet deployment shot and drops the claim that the reference contract is not deployed. |
+| `v1` | First render. Every figure in it is still accurate; its Scene 5 closer was true when it was cut and is not now. |
+
+`v2` is a re-render rather than an edit, because shot durations are derived from the narration:
+re-recording one line moves every later shot, so the honest cost of the correction was the whole
+film. The version lives in the filename because the explorer serves `/pitch/*` immutable — the
+name is the cache key — and the previous version is left in git history rather than kept in the
+tree beside the current one, since two copies of the largest blob in the repository would buy a
+reader nothing.
+
+This page is the script, the recording is what was said, and the documents are what the project
+claims. Where the script and the recording disagree, the recording is what a viewer heard; where
+either disagrees with the documents this repository produces, the documents are what the project
+claims. The render is reproducible from this page, so closing any of those gaps is a matter of
+running it again rather than of recovering anything.
