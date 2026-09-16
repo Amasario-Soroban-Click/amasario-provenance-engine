@@ -1,0 +1,30 @@
+# Line endings are pinned here, and for this repository that is a correctness
+# requirement rather than a formatting preference.
+#
+# The fixtures under `fixtures/` are compared byte for byte against documents the engine
+# rebuilds from the same model - `integration-tests/src/corpus.rs::assert_committed` reads
+# the committed file and requires it to equal the generated string exactly. The
+# specification states its determinism requirement over bytes, so a working tree that
+# rewrites line endings is not the same tree.
+#
+# Nothing pinned the working-tree form, and Git's default on Windows - Git for Windows
+# sets `core.autocrlf=true` - rewrites LF to CRLF on checkout. So every committed fixture
+# arrived at the Windows runner one byte longer per line than the document the engine
+# produces, and two suites in `integration-tests/contracts` failed with "the files differ
+# only in length or trailing newline". It reported the fixtures as stale, which is the
+# wrong diagnosis, and it did so only on the one platform whose default disagreed.
+#
+# The defect was unreachable until `.github/workflows/rust.yml` was corrected to run the
+# workspace suite: its test step named the root package, which has no tests, so the
+# three-platform matrix had never run these suites anywhere.
+#
+# `text=auto` keeps Git's own binary detection, so anything it classifies as binary - a
+# committed WebAssembly module, a captured response with a non-text byte - is still stored
+# and checked out verbatim. Every file currently committed is text, so this changes no
+# blob; it changes what Git writes into a working tree.
+* text=auto eol=lf
+
+# The PowerShell installer is read by Windows PowerShell, which is the one place a CRLF
+# would be conventional. It is deliberately left to the rule above: the script is
+# ASCII text with LF endings today, PowerShell 5.1 and later read it correctly, and a
+# per-file exception would make this file's promise ("one form everywhere") false.
