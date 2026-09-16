@@ -1,0 +1,35 @@
+# Who is asked to review what.
+#
+# The value of this file is that it removes a decision from the contributor: a pull
+# request to a repository with one maintainer otherwise sits until someone notices it, and
+# "waiting to be noticed" is indistinguishable from "rejected" from the outside.
+#
+# The rules are ordered least specific first, because the last matching pattern wins, so
+# the most specific rule for a path is the one stated last.
+#
+# The specification is a separate repository and is not covered here; a change that moves
+# a normative term belongs in `amasario-provenance-spec` and is reviewed there. See
+# `CONTRIBUTING.md`.
+
+# Everything, unless something below is more specific.
+*               @DevDDSmart
+
+# The CI definition and the dependency policy are the gates the rest of the repository is
+# judged by. A pull request that loosens a gate while claiming to fix a test is the one
+# case where the change and its justification can disagree without anyone noticing, so
+# these are called out explicitly.
+/.github/       @DevDDSmart
+/deny.toml      @DevDDSmart
+/clippy.toml    @DevDDSmart
+
+# The security policy states what the engine refuses to claim, and the profile states the
+# boundaries an analysis runs under. Both are read by people making deployment decisions,
+# so a change to either is a change to the tool's contract rather than to its behaviour.
+/SECURITY.md               @DevDDSmart
+/profiles/                 @DevDDSmart
+
+# Committed fixtures are compared byte for byte against documents the engine rebuilds, and
+# the recorded responses under `fixtures/` are transcriptions of what a network endpoint
+# actually said. A hand-edited one changes what the suites assert without changing any
+# test, which is the quietest way for this repository to start verifying the wrong thing.
+/fixtures/      @DevDDSmart
