@@ -227,23 +227,35 @@ compare two committed snapshots with `amasario diff`, which reads files and noth
 
 ## Building
 
+Every command below names `--workspace`, and that is a correctness requirement rather
+than a style preference. The root manifest is a package as well as a workspace - it holds
+the benchmarks - so a bare `cargo test` in this directory operates on the root package
+alone: it builds nothing, runs nothing and exits zero. A command list without the flag
+is a list that verifies none of the thirteen member crates while reporting success.
+
 ```bash
-# The toolchain is pinned in rust-toolchain.toml, so this installs it if needed.
+# The toolchain is pinned in rust-toolchain.toml, so this installs it if needed -
+# including both WebAssembly targets the fixtures and the reference contract need.
 rustup show
 
-cargo build --all-features
-cargo test --all-features
-cargo clippy --all-targets --all-features -- -D warnings
+cargo build  --workspace --all-features
+cargo test   --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all -- --check
-cargo doc --no-deps --document-private-items
+cargo doc    --workspace --no-deps --document-private-items
 ```
+
+The build comes before the test for a reason rather than by habit. Two suites in
+`integration-tests` run the `amasario` binary as a process, and `cargo test` builds a
+binary target as a *test harness* under `deps/` rather than as the product binary under
+`target/<profile>/`. Without a prior build those two fail on a clean checkout.
 
 Or the aliases, which exist so nobody has to remember the flag lists:
 
 ```bash
-cargo lint          # clippy over every target with warnings denied
+cargo lint          # clippy over every crate's every target, warnings denied
 cargo format-check  # rustfmt in check mode
-cargo test-all      # the test suite with all features
+cargo test-all      # builds the CLI, then runs the whole suite
 ```
 
 ## Determinism

@@ -55,10 +55,24 @@ pub fn binary() -> PathBuf {
 ///
 /// # Panics
 ///
-/// Panics when the binary has not been built, naming the command that builds it. This
-/// is deliberately a panic rather than a skip: `cargo test --workspace` builds every
-/// binary in the workspace, so its absence means the suite was invoked in a way that
-/// did not build the product, and a skip would hide that.
+/// Panics when the binary has not been built, naming the command that builds it. This is
+/// deliberately a panic rather than a skip, because a suite that quietly did nothing
+/// would be worse than no suite.
+///
+/// # What the message used to claim, and why it was wrong
+///
+/// It said that `cargo test --workspace` builds every binary in the workspace, so an
+/// absent binary meant the suite had been invoked in a way that did not build the
+/// product. That is false, and it made the documented command fail on a clean checkout
+/// with a message that blamed the caller. `cargo test` builds a binary target as a *test
+/// harness* under `deps/`; the product binary at `target/<profile>/amasario` is produced
+/// by `cargo build`, and by nothing else. So the two suites that run the process failed
+/// on any machine without a previous build in the target directory - which was hidden
+/// here for as long as it was, because a checked-in `target/` is not.
+///
+/// What changed is the claim, the `cargo test-all` alias, which builds first, and the
+/// README's build commands. What did not change is failing loudly: the difference is
+/// that the failure now describes the situation instead of inventing one.
 #[must_use]
 pub fn run(args: &[&str]) -> Output {
     let binary = binary();

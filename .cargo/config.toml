@@ -10,9 +10,24 @@ rustflags = ["-D", "warnings"]
 [alias]
 # Fixed commands, so a contributor runs what CI runs rather than assembling the
 # sequence from memory.
-lint = "clippy --all-targets --all-features -- -D warnings"
+#
+# Every one of these names `--workspace`, and that is a correctness requirement rather
+# than a style preference. The root manifest is a package as well as a workspace - it
+# holds the benchmarks - so a bare `cargo clippy` or `cargo test` in this directory
+# operates on the root package alone. A bare `cargo test` therefore builds nothing, runs
+# nothing and exits zero: an alias that reports success while checking none of the
+# thirteen member crates. `ci.yml` states the same requirement for the same reason, and
+# the aliases were the one place it had been missed.
+lint = "clippy --workspace --all-targets --all-features -- -D warnings"
 format-check = "fmt --all -- --check"
-test-all = "test --all-features"
+# `cargo test` builds the CLI binary target as a *test harness* under `deps/`, not as the
+# product binary at `target/<profile>/amasario`, and two suites in `integration-tests`
+# run that product binary as a process. So this builds first. Without it the alias that
+# claims to run the test suite fails two tests on a clean checkout - which is how it
+# behaved, and the failure message blamed the caller for invoking cargo wrongly. A shell
+# alias is the only form cargo offers for a sequence, which is why this one is written
+# as one.
+test-all = "!cargo build --workspace --all-features && cargo test --workspace --all-features"
 
 [term]
 verbose = false
