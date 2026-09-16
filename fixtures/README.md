@@ -91,7 +91,7 @@ Modules built from this repository's own Soroban contracts by `scripts/build-ref
 
 * `reference-callee.wasm` - 13895 byte(s), digest 347286105091f6d2d5db47ef5ae4442550a4d18f3a0f11284b59c22211031ac7; built from `reference-contract/callee` with soroban-sdk 27.0.6. the callee of the first-party reference contract: a real module the pinned SDK built, which declares an interface - the property the hand-assembled modules under wasm/ deliberately lack
 * `reference-callee.json` - the provenance record for the module above, checked against it
-* `reference-caller.wasm` - 9335 byte(s), digest 5b9002d177b278725322f3b9e9ab95322e35e802203579d946d00e9627ca9ef0; built from `reference-contract/caller` with soroban-sdk 27.0.6. the caller of the first-party reference contract: it invokes the callee across contracts, so the expected dependency edge is written down here rather than borrowed from a testnet contract this project does not own
+* `reference-caller.wasm` - 9319 byte(s), digest b361a71a39976897beb916fc85faa5670617ff95d68a5cecb00e7deabcedb7b7; built from `reference-contract/caller` with soroban-sdk 27.0.6. the caller of the first-party reference contract: it invokes the callee across contracts, so the expected dependency edge is written down here rather than borrowed from a testnet contract this project does not own
 * `reference-caller.json` - the provenance record for the module above, checked against it
 
 ### `snapshots/`

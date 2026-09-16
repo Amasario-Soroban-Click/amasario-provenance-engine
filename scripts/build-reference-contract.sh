@@ -34,6 +34,29 @@ readonly callee_dir="$root/reference-contract/callee"
 readonly caller_dir="$root/reference-contract/caller"
 readonly staging="$root/fixtures/reference"
 
+# Reproducibility, and the reason this is computed here rather than declared in a
+# `.cargo/config.toml`.
+#
+# `soroban-sdk` has panic sites in its own `env.rs`, and a panic message carries the
+# `file!()` of the file it was written in. For a dependency that is the absolute path of
+# the registry directory the crate was unpacked from, so two machines with `CARGO_HOME`
+# in different places produced different bytes from identical source: the first run of
+# `reference.yml` built a 9331-byte caller where the committed fixture was 9335, and the
+# whole difference was four bytes of `/home/runner` against `/home/codespace` inside one
+# string in the `name` section. A fixture whose digest moves with the builder's home
+# directory cannot be asserted against anything.
+#
+# Remapping both prefixes to fixed tokens makes the module a function of the source
+# rather than of the machine that compiled it, which is what lets `reference.yml` require
+# the committed modules to be what the source builds. Neither path can be spelled in a
+# config file, because both depend on where cargo and the checkout happen to live on the
+# machine doing the build - which is exactly why they are computed from the environment
+# here, and why any pre-existing `RUSTFLAGS` is preserved rather than replaced.
+cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+readonly cargo_home
+export RUSTFLAGS="--remap-path-prefix=$cargo_home=/cargo \
+--remap-path-prefix=$root=/amasario${RUSTFLAGS:+ $RUSTFLAGS}"
+
 if ! command -v cargo >/dev/null 2>&1; then
   echo "cargo is required to build the reference contract" >&2
   exit 1

@@ -8,7 +8,7 @@
     "target": "wasm32v1-none"
   },
   "moduleFile": "reference-caller.wasm",
-  "byteSize": 9335,
-  "digest": "5b9002d177b278725322f3b9e9ab95322e35e802203579d946d00e9627ca9ef0",
+  "byteSize": 9319,
+  "digest": "b361a71a39976897beb916fc85faa5670617ff95d68a5cecb00e7deabcedb7b7",
   "digestAlgorithm": "sha256"
 }

@@ -63,7 +63,7 @@ pub const CALLER_FILE: &str = "reference-caller.wasm";
 pub const CALLEE_DIGEST: &str = "347286105091f6d2d5db47ef5ae4442550a4d18f3a0f11284b59c22211031ac7";
 
 /// The caller module's digest, as recorded in `reference-caller.json` beside it.
-pub const CALLER_DIGEST: &str = "5b9002d177b278725322f3b9e9ab95322e35e802203579d946d00e9627ca9ef0";
+pub const CALLER_DIGEST: &str = "b361a71a39976897beb916fc85faa5670617ff95d68a5cecb00e7deabcedb7b7";
 
 /// The directory the reference modules are committed in.
 pub const DIRECTORY: &str = "reference";
