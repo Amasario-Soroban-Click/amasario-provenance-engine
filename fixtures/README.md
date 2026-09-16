@@ -96,7 +96,7 @@ Modules built from this repository's own Soroban contracts by `scripts/build-ref
 
 ### `snapshots/`
 
-Two captures of one contract at one boundary, differing so that a diff has an added edge, a changed module digest and a changed confidence to report. The names are what the `Integration` workflow globs for when it exercises `amasario diff`.
+Two captures of one contract at one boundary, differing so that a diff has an added relationship and a changed impact surface to report. The module digest is the same in both, and has to be: these are two states of one contract rather than two contracts, which is what makes them comparable at all. The names are what the `Integration` workflow globs for when it exercises `amasario diff`.
 
 * `testnet-alpha-before.json` - the earlier capture
 * `testnet-alpha-after.json` - the later capture

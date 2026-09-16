@@ -164,8 +164,17 @@ pub fn render() -> String {
         ),
         (
             "snapshots/",
+            // The description is deliberately specific about what changes and what does
+            // not. It said "an added edge, a changed module digest and a changed
+            // confidence" until the pair was actually diffed: the module digest is the
+            // same in both captures, and has to be, because two snapshots of one
+            // contract are comparable only while the contract is the same one. The
+            // categories the pair really produces are RELATIONSHIP_ADDED and
+            // IMPACT_SURFACE_CHANGED.
             "Two captures of one contract at one boundary, differing so that a diff has an \
-             added edge, a changed module digest and a changed confidence to report. The \
+             added relationship and a changed impact surface to report. The module digest \
+             is the same in both, and has to be: these are two states of one contract \
+             rather than two contracts, which is what makes them comparable at all. The \
              names are what the `Integration` workflow globs for when it exercises \
              `amasario diff`.",
             vec![
