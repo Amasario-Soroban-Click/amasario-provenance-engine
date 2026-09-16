@@ -32,6 +32,25 @@ jobs:
   dependencies:
     name: advisories, licences and sources
     runs-on: ubuntu-latest
+    # The tools that read `deny.toml` and `Cargo.lock` are pinned, for the reason
+    # `ci.yml` pins `actionlint` by version and digest and `Cargo.lock` is committed:
+    # a check on the supply chain should not itself be the part that changes without
+    # anyone deciding. `cargo install cargo-deny --locked` with no version installs
+    # whatever the registry published that morning, so an advisory gate could change
+    # shape - or start failing, or start passing something it used to catch - with no
+    # commit in this repository. That is not hypothetical here: `deny.toml` records
+    # having already been broken by a cargo-deny release that removed the
+    # `severity-threshold` key, and the answer then was to notice and adapt. Pinning
+    # makes the next such change arrive as a pull request that pins a new version and
+    # runs the new checker, which is a decision somebody makes rather than one a
+    # scheduled job discovers.
+    #
+    # The cost is deliberate and worth stating: these versions go stale until they are
+    # bumped, and Dependabot does not read a version out of a `run:` command. The
+    # versions live here rather than inside the steps so that bumping them is one edit.
+    env:
+      CARGO_DENY_VERSION: 0.20.2
+      CARGO_AUDIT_VERSION: 0.22.2
     steps:
       - uses: actions/checkout@v5
 
@@ -41,7 +60,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+        run: cargo install cargo-deny --version "${CARGO_DENY_VERSION}" --locked
 
       - name: Check advisories, licences, bans and sources
         run: cargo deny check
@@ -49,7 +68,7 @@ jobs:
       - name: Audit the lockfile against the RustSec database
         run: |
           set -euo pipefail
-          cargo install cargo-audit --locked
+          cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked
           # `--deny warnings` turns an advisory with no fix available into a visible
           # failure rather than a line in a log, so that the decision to keep the
           # dependency is made deliberately and recorded somewhere.
@@ -72,6 +91,22 @@ jobs:
   secrets:
     name: no credential is committed
     runs-on: ubuntu-latest
+    # The scanner is pinned by digest rather than by the moving `latest` tag it used to
+    # name. `latest` is a tag a maintainer can repoint, so "the image that scanned this
+    # commit" is not a fact a later reader can check - which matters more here than
+    # anywhere else in this workflow, because the thing being trusted is the one that
+    # decides whether a credential is in the history. The digest is an OCI image index
+    # with `linux/amd64` and `linux/arm64` entries, so it resolves to the right platform
+    # on the runner and on a developer's machine.
+    #
+    # `v8.30.1` is stated beside the digest because a digest is unreadable and a reader
+    # deserves to know which release they are running. The two were checked against each
+    # other when this was pinned: `docker manifest inspect` of the tag and of the digest
+    # return the same manifest list, so the tag is a label for that digest and not a
+    # guess about it.
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_DIGEST: sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
     steps:
       - uses: actions/checkout@v5
         with:
@@ -90,5 +125,5 @@ jobs:
           fi
           docker run --rm \
             -v "${GITHUB_WORKSPACE}:/repo" \
-            zricethezav/gitleaks:latest \
+            "zricethezav/gitleaks:v${GITLEAKS_VERSION}@${GITLEAKS_DIGEST}" \
             detect --source=/repo --redact --verbose --exit-code=1
