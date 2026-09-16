@@ -15,7 +15,15 @@
 #   scripts/build-reference-contract.sh            # build and stage
 #
 # The staged modules land in `fixtures/reference/`, where the integration suite reads
-# them, and the printed digests are the ones recorded in `fixtures/reference/README.md`.
+# them. The printed digests are the ones recorded in three places, and a rebuild that
+# moves them has to update all three: the constants in
+# `integration-tests/src/reference_contract.rs`, the `digest` field of
+# `fixtures/reference/reference-callee.json` and `reference-caller.json`, and the
+# generated index in `fixtures/README.md` - which is written by
+# `cargo run -p amasario-integration-tests --bin generate-fixtures` from the module's
+# own builders, so it is regenerated rather than edited. There is no
+# `fixtures/reference/README.md`; this comment named one until it was corrected, which
+# is the sort of stale pointer a reader follows once and then stops trusting.
 # This script is run by `.github/workflows/reference.yml` so that the fixtures cannot
 # drift from their source unnoticed.
 
