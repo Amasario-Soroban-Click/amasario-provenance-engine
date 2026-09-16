@@ -184,6 +184,9 @@ Then the GitHub Actions list, then the issue list.
 > the layers — refusals, bounds, formats, the harness, the explorer, the specification — because
 > the contribution surface is the point."
 
+*The count in this line was accurate when `v2` was rendered and is not current now; see
+[Versions](#versions).*
+
 ---
 
 ## Scene 7 — Value and close (4:10–5:00)
@@ -241,6 +244,20 @@ timeline places it.
 | --- | --- |
 | [`v2`](https://amasario-explorer.vercel.app/pitch/amasario-pitch-v2.mp4) | Current. Adds Scene 5's Testnet deployment shot and drops the claim that the reference contract is not deployed. |
 | `v1` | First render. Every figure in it is still accurate; its Scene 5 closer was true when it was cut and is not now. |
+
+One figure in `v2` has gone stale since it was cut, and it is worth naming because it is the
+kind of sentence that reads as fact rather than as a timestamp. Scene 6 says *"fifty-six open
+issues"*. The tracker had fifty-six when the film was rendered; it has **fifty-three** now,
+because three were closed — including one that asked for the reference contract's Testnet
+deployment to be recorded, which this project did. The recording is not wrong about the past;
+it is simply older than the number.
+
+Re-rendering for a count that moves whenever someone triages is not worth the cost, and the
+rule this page already sets is what to do instead: the recording is what was said, the
+documents are what the project claims, and a reader who wants the current number should read
+the tracker. If this video is ever re-cut for another reason, the line should be dropped
+rather than updated — a moving figure in a fixed recording is a defect that returns every
+time somebody closes an issue.
 
 `v2` is a re-render rather than an edit, because shot durations are derived from the narration:
 re-recording one line moves every later shot, so the honest cost of the correction was the whole
