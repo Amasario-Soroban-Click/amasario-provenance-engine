@@ -356,6 +356,17 @@ fn extend(
     }
 
     for edge in graph.edges_from(current) {
+        // The cap, and any truncation a nested call has just recorded, are re-checked on
+        // every edge rather than only on entry to this call. A recursive `extend` can
+        // return having pushed the last path the cap allows and having set `truncated`,
+        // and this loop would otherwise carry on to the next edge - where an edge that
+        // reaches the target directly pushes one path past the cap. Every push site below
+        // checks `search.paths.len() >= max_paths`, so the count held there, but not
+        // across a nested call returning: that is how a bounded search came to report
+        // more paths than its bound.
+        if search.truncated || search.paths.len() >= max_paths {
+            return;
+        }
         let neighbour = edge.target().clone();
         if chain.contains(&neighbour) {
             continue;
@@ -686,6 +697,55 @@ mod tests {
             none.truncated,
             "a cap of zero cannot report anything, and must say so"
         );
+    }
+
+    /// A cap is a ceiling even when a nested call is what reached it.
+    ///
+    /// This is the defect `graph-fuzzer` found, reduced to three edges. `C-subject` has
+    /// two routes to `C-target`: one through `C-mid`, and one direct. With a cap of one the
+    /// search descends into `C-mid`, which pushes the single path the cap allows and sets
+    /// `truncated` - and the parent loop then resumed and pushed the *direct* route as
+    /// well, reporting two paths against a cap of one.
+    ///
+    /// Every push site checked the cap; what none of them checked was that a nested call
+    /// had already filled it. The intermediate has to be explored before the direct edge
+    /// is reached, and `edges_from` returns edges in insertion order, so the declarations
+    /// below are what make the shape reachable rather than an accident of the graph.
+    #[test]
+    fn a_cap_is_a_ceiling_even_when_a_nested_call_reached_it() {
+        let graph = graph_of(&[
+            edge("C-subject", "C-mid", &"a".repeat(64)),
+            edge("C-mid", "C-target", &"b".repeat(64)),
+            edge("C-subject", "C-target", &"c".repeat(64)),
+        ]);
+
+        let search = all_paths_bounded(&graph, &c("C-subject"), &c("C-target"), limits(6, 100), 1);
+
+        assert_eq!(
+            search.paths.len(),
+            1,
+            "a cap of one reported {} paths: {:?}",
+            search.paths.len(),
+            search.paths
+        );
+        assert!(
+            search.truncated,
+            "a search that stopped at its cap is partial, and must say so"
+        );
+
+        // The count is a ceiling for every cap, not only for the one the fuzzer happened
+        // to reach: the same shape is enumerated under a range of caps so that a fix which
+        // moved the boundary rather than removing it fails here.
+        for cap in 1..=3 {
+            let search =
+                all_paths_bounded(&graph, &c("C-subject"), &c("C-target"), limits(6, 100), cap);
+            assert!(
+                search.paths.len() <= cap,
+                "a cap of {cap} reported {} paths: {:?}",
+                search.paths.len(),
+                search.paths
+            );
+        }
     }
 
     #[test]
