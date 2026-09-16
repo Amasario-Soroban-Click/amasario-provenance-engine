@@ -141,6 +141,25 @@ pace; let each view sit for two seconds before a slow zoom onto the data table.
 > compiled bytes are committed with their digests and rebuilt in CI to prove the build is
 > reproducible. It is here to be analysed, not deployed."
 
+**Superseded after the recording was made.** The last sentence was true when the video was
+rendered and is not true now: both halves are deployed to Testnet, with the deployed modules
+hashing to the committed fixtures, and [testnet.md](testnet.md) records the contract IDs and
+the transaction in which the caller entered the callee.
+
+The audio is left as recorded rather than re-cut, and the trade is stated rather than hidden.
+Re-cutting means re-recording the narration line, which shifts every later shot's timing,
+because shot durations are derived from the narration - so the cost is a full re-render rather
+than an edit. What a viewer of the recording alone is misled about is one clause: that the
+fixture is a fixture. What they are *not* misled about is the claim the clause exists to
+support, which is that the bytes are committed and that CI rebuilds them and compares - both
+still true, and both what the sentence is doing the work of.
+
+Being explicit about the direction of the correction: this page is the script, the recording
+is what was said, and the documents are what the project claims. Where the recording is out
+of date with the documents, the documents are right - which is this paragraph's whole point.
+A re-render is the only thing that removes the discrepancy, and the render is reproducible
+from this page, so it is a matter of running it again rather than of recovering anything.
+
 > "Notice what the explorer does not do. It does not fetch, it does not parse WebAssembly, and it
 > does not compute a single value. It is a viewer, deliberately, so the picture cannot claim more
 > than the table beside it."

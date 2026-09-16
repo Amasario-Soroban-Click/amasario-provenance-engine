@@ -139,6 +139,15 @@ repository's build instead of silently altering an analysis.
 
 ## What is not here
 
-No frontend, no wallet, no block explorer, no token, no on-chain contract, no security
-scanner. The engine's interface is the CLI and the reusable Rust libraries behind it. See
-[security.md](security.md) for what the engine does and does not claim.
+No frontend, no wallet, no block explorer, no token, no security scanner. The engine's
+interface is the CLI and the reusable Rust libraries behind it.
+
+One qualification, because the list above is about the engine's workspace and this
+repository is wider than its workspace: `reference-contract/` holds a pair of Soroban
+contracts that no crate here links against, and the pair is deployed to Testnet so that the
+dependency analysis has a target this project owns rather than only one it borrows. It is
+not part of the stack - the deployment is made by a script outside the workspace, which
+names an identity the `stellar` CLI holds, so no crate here signs anything. It used to say
+"no on-chain contract" outright, which stopped being true the day the pair was deployed; see
+[testnet.md](testnet.md) for the deployment itself and [security.md](security.md) for what
+the engine does and does not claim.
