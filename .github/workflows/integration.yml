@@ -45,6 +45,15 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      # The CLI suites under `integration-tests/` run the `amasario` binary and locate it
+      # relative to their own test executable. `cargo test --test '*'` does not build a
+      # binary target at all - it builds test harnesses - so without this step the two
+      # `snapshots` suites fail with "the amasario binary has not been built", which is
+      # exactly the message they are written to give. Building the workspace first is part
+      # of running the suite rather than an optimisation.
+      - name: Build the workspace
+        run: cargo build --workspace --all-features
+
       - name: Integration test suites
         env:
           AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
