@@ -35,9 +35,16 @@
 *.profdata
 /criterion/
 
-# Fuzzing corpus. The interesting cases belong in `fuzz/<target>/corpus`, which is
-# committed; libFuzzer's own accumulated corpus is not, because it is machine-state
-# rather than a reviewable artefact.
+# Fuzzing output. All of it is machine state, and none of it is committed.
+#
+# The rule for the corpus is the one that took a run to establish. `fuzz/corpus/<target>/`
+# accumulates one input per new code path libFuzzer reaches, and a sixteen-second run over
+# the five targets produces a few thousand files and several megabytes. That is not a
+# reviewable artefact and it is not a reviewable diff, so it is ignored; the scheduled
+# workflow caches it between runs, which is what gives coverage somewhere to accumulate
+# across a schedule. A finding is turned into a unit test in the crate that owns the
+# invariant - the step `docs/fuzzing.md` describes - rather than into a committed blob.
 fuzz/artifacts/
 fuzz/coverage/
+fuzz/corpus/
 fuzz/target/
