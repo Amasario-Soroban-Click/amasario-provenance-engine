@@ -152,6 +152,33 @@ are skipped with a printed reason when the tool is not installed, rather than th
 reporting a green gate it did not actually reach. The script installs neither: they are
 release binaries, and fetching one as part of a check would be its own supply-chain step.
 
+## Measuring coverage
+
+```bash
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+cargo llvm-cov --workspace --all-features --summary-only --ignore-run-fail
+```
+
+`--ignore-run-fail` is not a way of hiding a failure here; it is required, and the reason is
+worth knowing because it is a real gap rather than a convenience. `cargo llvm-cov` drives
+`cargo test --tests`, which does not build the workspace's binary targets — so the `snapshots` suite, which drives the `amasario` binary as a subprocess, cannot find it and
+fails on a clean tree under coverage even though it passes under `cargo test` after a
+`cargo build`. Both halves of that are
+[issue #41](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/issues/41).
+
+The same fact is why `amasario-cli` reports a line-coverage figure of about 24% while every
+other crate is between 80% and 97%. The CLI's behaviour is exercised heavily — by the
+eleven end-to-end suites, which is what those suites are for — but it is exercised inside a
+separately built binary that the instrumentation never sees. The number is therefore a
+statement about the measurement, not about the tests, and it is reported with that caveat in
+the README rather than rounded away.
+
+Coverage is a weak signal and it is not currently a gate: it points at the crates nobody has
+looked at recently, which is useful, and it rewards tests that execute lines, which is not.
+The figures are published in the README so that a change in them is visible, and gating them
+is [issue #45](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/issues/45).
+
 ## Benchmarks
 
 ```bash
