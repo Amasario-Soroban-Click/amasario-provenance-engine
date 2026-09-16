@@ -52,9 +52,15 @@ readonly staging="$root/fixtures/reference"
 # config file, because both depend on where cargo and the checkout happen to live on the
 # machine doing the build - which is exactly why they are computed from the environment
 # here, and why any pre-existing `RUSTFLAGS` is preserved rather than replaced.
+# `-D warnings` is restated here rather than inherited, and that is a real trap rather
+# than tidiness: setting `RUSTFLAGS` *replaces* `build.rustflags` from
+# `.cargo/config.toml` outright - the two are not merged - so a script that exported
+# only the remaps would silently drop the repository's warnings-are-errors policy for
+# this build. The one build here that produces a committed artefact would then be the
+# one build that tolerates a warning.
 cargo_home="${CARGO_HOME:-$HOME/.cargo}"
 readonly cargo_home
-export RUSTFLAGS="--remap-path-prefix=$cargo_home=/cargo \
+export RUSTFLAGS="-D warnings --remap-path-prefix=$cargo_home=/cargo \
 --remap-path-prefix=$root=/amasario${RUSTFLAGS:+ $RUSTFLAGS}"
 
 if ! command -v cargo >/dev/null 2>&1; then
