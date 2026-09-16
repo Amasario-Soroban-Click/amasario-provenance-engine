@@ -1,0 +1,46 @@
+# Editor defaults, for the files no formatter owns.
+#
+# Rust is formatted by `rustfmt` through `rustfmt.toml`, and CI fails on a difference, so
+# nothing here needs to describe a `.rs` file's layout beyond the indentation the
+# formatter itself uses. What this file is for is everything `cargo fmt` does not touch:
+# the manifests, the workflows, the scripts, the fixtures and the documentation. Those are
+# checked for content by CI and not for shape, which is exactly the gap an editor default
+# closes - a stray CRLF or a trailing space in a fixture is otherwise invisible until a
+# byte-for-byte comparison over it fails on one platform and not another.
+#
+# The settings are deliberately the ones the repository already satisfies, so adopting
+# this file changes no file. A `.editorconfig` that disagreed with what is committed would
+# produce a diff on every save, which is how editor configuration gets turned off.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# `rustfmt.toml` sets `tab_spaces = 4`, and a fixture or a Rust file is checked for content
+# rather than shape, so this only has to agree with the formatter.
+[*.rs]
+indent_size = 4
+
+# Trailing whitespace is deliberately left alone in Markdown, because two spaces at the
+# end of a line are a hard line break. A rule that stripped them would change how a
+# paragraph renders while looking like it had only removed invisible characters.
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml,json,toml}]
+indent_size = 2
+
+[*.{sh,env,ps1}]
+indent_size = 2
+# Trailing whitespace inside a quoted string in a shell script is content, and a
+# here-document's closing delimiter must be at column zero with nothing after it.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
