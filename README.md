@@ -6,6 +6,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Rust: 1.98.1](https://img.shields.io/badge/rust-1.98.1-orange.svg)](rust-toolchain.toml)
 [![Specification: 1.0.0](https://img.shields.io/badge/amasario--spec-1.0.0-informational.svg)](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec)
+[![Explorer](https://img.shields.io/badge/explorer-live-000000?logo=vercel)](https://amasario-explorer.vercel.app)
 
 The **Testnet** badge is the live test: it runs on a schedule against a real contract on
 testnet and asserts the analysis, not just that the commands exited zero. A red badge
@@ -52,6 +53,36 @@ snapshot creation, snapshot comparison and report generation.
 The specification defines what the data and relationships **mean**. This repository
 executes that specification. It does not redefine the normative model; where an
 implementation type is required to consume a model, it lives here and says so.
+
+### The rest of Amasario
+
+Four repositories, and the boundaries between them are the design rather than an accident
+of packaging. The [organisation profile](https://github.com/Amasario-Soroban-Click) is the
+short version; this is what each of the others is, and why it is not in this one.
+
+[`amasario-provenance-spec`](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec)
+is the **normative** layer: the schemas, taxonomies, models, rules, fixtures and
+deterministic vectors that say what a document means. It is separate because a
+specification with one implementation can be whatever that implementation does, and
+because a change that alters what a document means should be detectable as a schema failure
+rather than as a quietly different analysis result.
+
+[`amasario-explorer`](https://github.com/Amasario-Soroban-Click/amasario-explorer) is the
+**presentation** layer, [live at
+amasario-explorer.vercel.app](https://amasario-explorer.vercel.app). It renders this
+repository's own documents — the graph fixtures, the committed snapshot pair, the reference
+contract's records, and the pages under `docs/`. It performs no analysis and contacts no
+network: every file it shows is vendored at a recorded commit, with the digest of each copy
+re-checked in its own CI. Worth knowing when reading it, because a graph with arrows on it
+is more persuasive than the JSON under it, and the explorer is built so that the picture
+cannot say more than the table beside it.
+
+[`amasario-docs`](https://github.com/Amasario-Soroban-Click/amasario-docs) is the
+**documentation** layer, and it is split by ownership rather than by topic. What a document
+*means* is normative and lives in the specification. What this engine *does*, and what it
+refuses to claim, lives in [`docs/`](docs/) here. What cuts across both — the architecture
+between the layers, the compatibility policy, governance and the gaps that are known and
+not yet closed — lives there.
 
 ## The question this engine answers
 
@@ -323,6 +354,14 @@ reproduce each vector's canonical serialisation and digest byte for byte.
 | [`docs/fuzzing.md`](docs/fuzzing.md) | The five fuzz targets, what each asserts, and how a failure is read |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | Exit codes, and each failure mode with its cause and remedy |
 | [`examples/README.md`](examples/README.md) | Nine worked examples, and which of them run without a network |
+
+Every page above documents this engine, and stays in this repository so that a change to
+behaviour and a change to its description are reviewable together. The cross-cutting layer —
+how the four repositories fit together, the compatibility policy, governance, and the gaps
+that are known and not yet closed — lives in
+[`amasario-docs`](https://github.com/Amasario-Soroban-Click/amasario-docs), which is a
+different repository because it outlives any one of them. The explorer renders its own copy
+of these pages at <https://amasario-explorer.vercel.app/#/docs>.
 
 ## Examples
 
