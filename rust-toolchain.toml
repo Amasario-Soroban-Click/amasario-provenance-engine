@@ -7,4 +7,11 @@
 channel = "1.98.1"
 components = ["rustfmt", "clippy"]
 profile = "minimal"
-targets = ["wasm32-unknown-unknown"]
+# Two targets, and both are used. `wasm32-unknown-unknown` is what the fixtures and
+# the integration suites build small modules with. `wasm32v1-none` is what the Soroban
+# SDK requires: from Rust 1.82 its build script refuses the older target outright,
+# because that target enables `reference-types` and `multi-value`, which the Soroban
+# environment does not support. `scripts/build-reference-contract.sh` needs the second
+# one, so a contributor who runs `rustup show` gets both and does not hit the refusal
+# on the first build.
+targets = ["wasm32-unknown-unknown", "wasm32v1-none"]
