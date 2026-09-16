@@ -31,10 +31,10 @@ jobs:
     name: recorded fixtures and mocked endpoints
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Check out the normative specification
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: Amasario-Soroban-Click/amasario-provenance-spec
           ref: main
@@ -113,7 +113,7 @@ jobs:
           --health-timeout 5s
           --health-retries 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
         run: rustup show

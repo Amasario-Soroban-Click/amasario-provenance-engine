@@ -37,7 +37,7 @@ jobs:
     name: fuzz targets
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
         run: rustup show
@@ -84,7 +84,7 @@ jobs:
 
       - name: Restore the accumulated corpus
         if: steps.targets.outputs.run == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: fuzz/corpus
           key: fuzz-corpus-${{ github.sha }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload any crash artifacts
         if: failure() && steps.targets.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-crashes
           path: fuzz/artifacts
