@@ -15,6 +15,30 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
+# The engine's lint policy, restated rather than inherited, for the same reason as the
+# callee's copy: this is its own build root, so `workspace = true` cannot reach the
+# root manifest's tables. `scripts/check-reference-lints.sh` asserts both copies still
+# match `[workspace.lints.*]` in the root `Cargo.toml`, so the duplication is checked
+# rather than assumed.
+#
+# Two entries are held at a different level, for reasons the SDK's attribute macros decide
+# rather than this crate. The callee's manifest carries both in full - the `forbid` that
+# cannot survive `#[contractimpl]`'s own `#[allow(unsafe_code)]`, and the `#[contract]`
+# client whose undocumented fields and methods no `allow` on the item can reach. Both are
+# named exceptions in `scripts/check-reference-lints.sh`, so they are asserted rather than
+# implied by these two files happening to agree.
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "allow"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+allow_attributes_without_reason = "warn"
+missing_const_for_fn = "warn"
+redundant_clone = "warn"
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

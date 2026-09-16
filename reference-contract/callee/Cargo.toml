@@ -16,6 +16,63 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
+# The engine's lint policy, restated rather than inherited.
+#
+# `[lints] workspace = true` is not available here: this is its own build root (see the
+# empty `[workspace]` above), because the caller cannot be compiled until the callee's
+# module exists. So the policy is copied, and a copy drifts. It is checked rather than
+# trusted - `scripts/check-reference-lints.sh` compares both copies against the root
+# manifest's `[workspace.lints.*]` tables, and `reference.yml` runs it, so a table that
+# moves in one file and not the other fails a run instead of passing quietly.
+#
+# That policy is applied to a contract built by `soroban-sdk`'s attribute macros, and two
+# of its entries cannot survive that. Both are recorded here rather than quietly relaxed,
+# and `scripts/check-reference-lints.sh` carries them as named, checked exceptions - every
+# other key is still compared exactly against the workspace, so a lint added there still
+# has to be added here.
+#
+# 1. `unsafe_code` is `deny`, not the workspace's `forbid`. `forbid` cannot be overruled
+#    by an inner `allow`, and `#[contractimpl]` expands to an `#[allow(unsafe_code)]` of
+#    its own through the SDK's `ctor_entry` support macro, so the crate does not compile
+#    under `forbid` at all:
+#
+#      error[E0453]: allow(unsafe_code) incompatible with previous forbid
+#        --> src/lib.rs:50:1
+#         |
+#      50 | #[contractimpl]
+#         | ^^^^^^^^^^^^^^^ overruled by previous forbid
+#
+#    `deny` is the strictest level that survives the expansion. What is given up is one
+#    thing, stated rather than glossed: an inner `#[allow(unsafe_code)]` in this crate's
+#    own source could lift a `deny`, where it could not lift a `forbid`.
+#
+# 2. `missing_docs` is `allow`, not `warn`. `#[contract]` generates a client type whose
+#    fields and associated functions carry no documentation, and no `allow` placed on the
+#    item reaches them - the lint is reported at the `#[contract]` line and an `allow`
+#    there takes the count from five errors to four. Documenting them is not possible
+#    from here, because they are not in the source. What stands in for the documentation
+#    is assertion: `integration-tests/reference/` checks the decoded interface against
+#    the exact function names, input names, types and outputs, so the generated surface is
+#    checked rather than described. A public item in *this* file still has to be
+#    documented, and is: it is reviewed by hand, which a lint cannot do.
+#
+# `edition` stays 2021 while the engine's workspace is 2024, and that is not an
+# oversight. The compiled bytes of this crate are asserted against a committed digest and
+# deployed to testnet, so an edition bump is a fixture change: it belongs in a commit that
+# regenerates `fixtures/reference/`, updates the two digests and records a new
+# deployment, not in a tidy-up.
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "allow"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+allow_attributes_without_reason = "warn"
+missing_const_for_fn = "warn"
+redundant_clone = "warn"
+
 [lib]
 # `cdylib` is what makes the crate produce something deployable; `rlib` keeps it
 # usable as a Rust library for the test surface.
