@@ -56,3 +56,15 @@ fuzz/target/
 /reference-contract/callee/target/
 /reference-contract/caller/target/
 /reference-contract/caller/wasm/
+
+# The Soroban test host writes a `test_snapshots/` tree beside each contract as it runs,
+# recording the ledger and authorization state of every test. Nothing here asserts one:
+# there is no `to_snapshot` comparison in either contract, so the files are written and
+# never read, and committing them would add two JSON blobs that no check can tell are
+# current - the same objection this repository raises against any fixture whose meaning
+# is not tested. Which of the two states is the honest one is a real choice, and it is
+# worth stating: these are ignored rather than committed *because* they are unasserted.
+# A snapshot that a test compared against would belong in the tree, and the way to get
+# one is to assert it, not to commit the file the host happened to write.
+reference-contract/callee/test_snapshots/
+reference-contract/caller/test_snapshots/
