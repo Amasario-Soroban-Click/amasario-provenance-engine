@@ -53,11 +53,27 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      # The version is read with `sed`, and the difference from `grep ... | cut` is the
+      # whole point of the step. The root manifest is a package as well as a workspace, so
+      # `version.workspace = true` in `[package]` comes before `version = "1.0.0"` in
+      # `[workspace.package]`. `grep -m1 '^version'` matches the first of those and `cut
+      # -d'"' -f2` on a line with no quote in it returns the line unchanged, so
+      # `manifest_version` was the literal string `version.workspace = true` and every tag
+      # was rejected by a comparison against a version that was never read. Nothing caught
+      # it because this job only runs on a tag, which had never been pushed - a release
+      # that cannot validate is a release that cannot happen, and it looked like a gate
+      # that was merely untested. `release.sh` reads the same file the same way, which is
+      # why the local check suite passed while the workflow could not.
       - name: The tag agrees with the workspace version
         id: version
         run: |
           set -euo pipefail
-          manifest_version="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
+          manifest_version="$(sed -n 's/^version *= *"\(.*\)"/\1/p' Cargo.toml | head -1)"
+          if [ -z "${manifest_version}" ]; then
+            echo "::error title=No workspace version::Cargo.toml declares no version, so the \
+          tag cannot be checked against it."
+            exit 1
+          fi
           tag="${GITHUB_REF_NAME#v}"
           echo "manifest=${manifest_version} tag=${tag}"
           if [ "${manifest_version}" != "${tag}" ]; then
