@@ -44,29 +44,27 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # What marks a target in this repository is `cargo-fuzz = true` under
-      # `[package.metadata]` in a member manifest, with the entry point at
-      # `fuzz/<target>/src/main.rs` - not a directory named `fuzz_targets`. The previous
-      # check looked for that directory, never found it, set `run` to false, and skipped
-      # every step below - so the scheduled job went green without fuzzing anything. The
-      # suite it was supposed to protect is the one the security policy points at when it
-      # promises a malformed module or a hostile RPC response produces a classified error
-      # rather than a panic.
+      # The check looks for the marker `cargo fuzz` itself requires - `cargo-fuzz = true`
+      # under `[package.metadata]` in `fuzz/Cargo.toml` - rather than for a directory or a
+      # file name. A layout that has the marker is runnable and one that does not is not,
+      # whatever the files are called, so checking for the marker asks the same question
+      # cargo-fuzz asks.
+      #
+      # The previous check looked for a `fuzz_targets` directory that this repository did
+      # not have, set `run` to false, and skipped every step below, so the scheduled job
+      # went green without fuzzing anything. The suite it was supposed to protect is the
+      # one the security policy points at when it promises a malformed module or a hostile
+      # RPC response produces a classified error rather than a panic.
       - name: Decide whether there are targets to run
         id: targets
         run: |
           set -euo pipefail
-          # `|| true` states the expected input: `grep` exits 1 when a manifest does not
-          # carry the marker, and that is an answer rather than a failure.
-          targets="$(find fuzz -name Cargo.toml -not -path 'fuzz/target/*' \
-            -not -path 'fuzz/artifacts/*' \
-            -exec grep -l '^cargo-fuzz *= *true' {} + 2>/dev/null || true)"
-          if [ -n "${targets}" ]; then
+          if grep -qs '^cargo-fuzz *= *true' fuzz/Cargo.toml; then
             echo "run=true" >> "${GITHUB_OUTPUT}"
-            printf 'fuzz targets declared by:%s\n' "${targets}"
+            grep -n '^cargo-fuzz *= *true' fuzz/Cargo.toml
           else
-            echo "::notice title=No fuzz targets::fuzz/ declares no cargo-fuzz target; \
-          nothing to run. This is reported rather than passed silently."
+            echo "::notice title=No fuzz targets::fuzz/Cargo.toml carries no cargo-fuzz \
+          marker; nothing to run. This is reported rather than passed silently."
             echo "run=false" >> "${GITHUB_OUTPUT}"
           fi
 
@@ -97,15 +95,33 @@ jobs:
           SECONDS_PER_TARGET: ${{ inputs.seconds || '300' }}
         run: |
           set -euo pipefail
-          cd fuzz
+          # This runs from the repository root, and that is required rather than tidy:
+          # `cargo fuzz` resolves `fuzz/` relative to the working directory, so running it
+          # from inside `fuzz/` makes it look for `fuzz/fuzz/Cargo.toml` and fail with
+          # "could not read the manifest file". The step used to `cd fuzz` first.
+          #
+          # The target list is captured and checked before it is iterated, because an
+          # empty list is the failure this step cannot afford to report as a success: a
+          # loop over an empty expansion runs no iterations and exits zero, which is how
+          # this job would have stayed green after the layout was made runnable but before
+          # `cargo fuzz list` was found to return nothing.
+          targets="$(cargo +nightly fuzz list)"
+          if [ -z "${targets}" ]; then
+            echo "::error title=No targets to fuzz::cargo fuzz listed no targets, so this \
+          job would have passed without fuzzing anything. Expected the five targets \
+          declared in fuzz/Cargo.toml."
+            exit 1
+          fi
+          echo "targets: $(printf '%s' "${targets}" | tr '\n' ' ')"
           # A fuzzer that finds a crash leaves the artifact in fuzz/artifacts, and the
           # workflow uploads it below rather than swallowing it: the reproducer is the
           # useful output, not the exit code.
-          for target in $(cargo +nightly fuzz list); do
+          while IFS= read -r target; do
+            [ -z "${target}" ] && continue
             echo "==> fuzzing ${target} for ${SECONDS_PER_TARGET}s"
             cargo +nightly fuzz run "${target}" -- -max_total_time="${SECONDS_PER_TARGET}" \
               -rss_limit_mb=4096
-          done
+          done <<< "${targets}"
 
       - name: Upload any crash artifacts
         if: failure() && steps.targets.outputs.run == 'true'
