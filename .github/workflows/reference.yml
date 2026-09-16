@@ -52,6 +52,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # First, because it is the cheapest thing here and the only one that needs no
+      # toolchain: a shell, three manifests and a diff. The two contract crates cannot
+      # inherit the workspace's `[lints]` tables - they are separate build roots - so
+      # their copies of the policy are asserted rather than trusted. Running it before
+      # the build means a drifted table fails in seconds instead of after a minute of
+      # compiling for a target nothing is going to check it against.
+      - name: Both contract manifests carry the engine's lint policy
+        run: scripts/check-reference-lints.sh
+
       # `rustup show` reads `rust-toolchain.toml` and installs the compiler *and* the
       # targets that file declares, which is why the target list is stated there rather
       # than added by a `rustup target add` step here. The Soroban SDK's build script
@@ -88,6 +97,19 @@ jobs:
             exit 1
           fi
           echo "the committed modules are byte-for-byte what the source builds"
+
+      # Both halves are tested, and the order is the one the call graph requires: the
+      # caller's module is generated from the callee's specification, so the callee is
+      # the simpler thing and the one whose failure explains the other's.
+      #
+      # The callee's test ran nowhere until this step existed. The build above compiled
+      # the callee's module, and the step below tested only the caller, so the callee's
+      # assertions were committed, compiled and never executed - a test that looks like
+      # coverage in the tree and is not coverage in any run. It is also the only place
+      # `require_auth` and the storage TTL extension are exercised at all, so its
+      # absence left the contract's authorization surface asserted nowhere.
+      - name: The callee's own storage and authorization hold
+        run: cargo test --manifest-path reference-contract/callee/Cargo.toml
 
       # The constructed call graph, asserted with an oracle the engine is not part of: the
       # SDK's own test host executes `caller -> callee`, so if this passes and the engine
