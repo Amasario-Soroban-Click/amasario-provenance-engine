@@ -3,6 +3,9 @@
 [![CI](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/ci.yml)
 [![Testnet](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/testnet.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/testnet.yml)
 [![Security](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/actions/workflows/security.yml)
+[![Coverage: 88.14%](https://img.shields.io/badge/coverage-88.14%25-brightgreen)](#status)
+[![Resource costs: measured](https://img.shields.io/badge/on--chain%20cost-measured-blue)](docs/resource-costs.md)
+[![Contributors](https://img.shields.io/github/contributors/Amasario-Soroban-Click/amasario-provenance-engine)](https://github.com/Amasario-Soroban-Click/amasario-provenance-engine/graphs/contributors)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Rust: 1.98.1](https://img.shields.io/badge/rust-1.98.1-orange.svg)](rust-toolchain.toml)
 [![Specification: 1.0.0](https://img.shields.io/badge/amasario--spec-1.0.0-informational.svg)](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec)
@@ -37,7 +40,13 @@ section walk against bytes the real toolchain emitted - and because the two form
 deliberate call graph, `caller -> callee` is an edge the engine is asserted to find rather
 than borrowed from a contract on testnet that this project does not own. They are not part
 of the engine's workspace: nothing in the engine depends on them, and their build is its own
-workflow.
+workflow. What they do carry is their own tests - twelve across the pair, run by that workflow
+rather than counted here - which assert the ground truth the engine is compared against: that
+`require_auth` really gates the write, that nested authorization is genuinely required for the
+caller's authenticated path, that a read publishes no event, and that each account's sequence
+is tracked separately. The paired call graph is asserted by the SDK's own host executing the
+same `caller -> callee` call, so if that passes and the engine disagrees, the engine is wrong
+rather than the world.
 
 **Both halves are deployed to Testnet, and that is deliberate.** The callee is
 [`CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N`](https://stellar.expert/explorer/testnet/contract/CBMPDHYWBGBJ4JAUKNLE6OTC4LQTLV3XFVMAN72MCFSMN2EOJPYEXK6N)
@@ -51,7 +60,9 @@ relationship between two contracts this project owns, established from evidence 
 read out of a fixture. [`scripts/deploy-reference-contract.sh`](scripts/deploy-reference-contract.sh)
 reproduces the deployment and refuses to report one it has not checked against the fixture
 digest; [`docs/testnet.md`](docs/testnet.md) records the transactions and explains why the
-**callee** is the subject worth asking, not the caller.
+**callee** is the subject worth asking, not the caller. What each entrypoint costs on chain
+is measured rather than estimated, in [`docs/resource-costs.md`](docs/resource-costs.md),
+reproducible with [`scripts/benchmark-contracts.sh`](scripts/benchmark-contracts.sh).
 
 So there is a contract surface to review here, and it is small on purpose: the callee has an
 authorisation surface, a storage lifetime and one arithmetic operation, across roughly two
@@ -396,6 +407,7 @@ reproduce each vector's canonical serialisation and digest byte for byte.
 | [`docs/snapshots.md`](docs/snapshots.md) | Capture, normalisation, the content digest and comparison |
 | [`docs/output-formats.md`](docs/output-formats.md) | JSON, YAML, Markdown, DOT, GraphML and JUnit |
 | [`docs/testnet.md`](docs/testnet.md) | Running against testnet, and the observation boundary |
+| [`docs/resource-costs.md`](docs/resource-costs.md) | What each reference-contract entrypoint costs on chain, measured rather than estimated |
 | [`docs/ci-integration.md`](docs/ci-integration.md) | Using the engine as a build gate |
 | [`docs/security.md`](docs/security.md) | The security boundaries, stated as what the tool does not claim |
 | [`docs/fuzzing.md`](docs/fuzzing.md) | The five fuzz targets, what each asserts, and how a failure is read |
