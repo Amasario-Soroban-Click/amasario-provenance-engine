@@ -44,15 +44,28 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      # What marks a target in this repository is `cargo-fuzz = true` under
+      # `[package.metadata]` in a member manifest, with the entry point at
+      # `fuzz/<target>/src/main.rs` - not a directory named `fuzz_targets`. The previous
+      # check looked for that directory, never found it, set `run` to false, and skipped
+      # every step below - so the scheduled job went green without fuzzing anything. The
+      # suite it was supposed to protect is the one the security policy points at when it
+      # promises a malformed module or a hostile RPC response produces a classified error
+      # rather than a panic.
       - name: Decide whether there are targets to run
         id: targets
         run: |
           set -euo pipefail
-          if [ -d fuzz ] && [ -n "$(find fuzz -maxdepth 2 -name 'fuzz_targets' -type d -print -quit)" ]; then
+          # `|| true` states the expected input: `grep` exits 1 when a manifest does not
+          # carry the marker, and that is an answer rather than a failure.
+          targets="$(find fuzz -name Cargo.toml -not -path 'fuzz/target/*' \
+            -not -path 'fuzz/artifacts/*' \
+            -exec grep -l '^cargo-fuzz *= *true' {} + 2>/dev/null || true)"
+          if [ -n "${targets}" ]; then
             echo "run=true" >> "${GITHUB_OUTPUT}"
-            find fuzz -maxdepth 3 -name '*.rs' -path '*fuzz_targets*' -print
+            printf 'fuzz targets declared by:%s\n' "${targets}"
           else
-            echo "::notice title=No fuzz targets::fuzz/ holds no fuzz_targets directory; \
+            echo "::notice title=No fuzz targets::fuzz/ declares no cargo-fuzz target; \
           nothing to run. This is reported rather than passed silently."
             echo "run=false" >> "${GITHUB_OUTPUT}"
           fi
@@ -60,6 +73,14 @@ jobs:
       - name: Install cargo-fuzz
         if: steps.targets.outputs.run == 'true'
         run: cargo install cargo-fuzz --locked
+
+      # `cargo fuzz` drives `-Zsanitizer`, which is a nightly-only flag, and refuses to
+      # run on the toolchain `rust-toolchain.toml` pins. Without this step the job would
+      # have failed on its first target - which is why the two defects here had to be
+      # fixed together: the guard meant the failure was never reached.
+      - name: Install the nightly toolchain cargo-fuzz requires
+        if: steps.targets.outputs.run == 'true'
+        run: rustup toolchain install nightly --profile minimal
 
       - name: Restore the accumulated corpus
         if: steps.targets.outputs.run == 'true'
@@ -80,9 +101,9 @@ jobs:
           # A fuzzer that finds a crash leaves the artifact in fuzz/artifacts, and the
           # workflow uploads it below rather than swallowing it: the reproducer is the
           # useful output, not the exit code.
-          for target in $(cargo fuzz list); do
+          for target in $(cargo +nightly fuzz list); do
             echo "==> fuzzing ${target} for ${SECONDS_PER_TARGET}s"
-            cargo fuzz run "${target}" -- -max_total_time="${SECONDS_PER_TARGET}" \
+            cargo +nightly fuzz run "${target}" -- -max_total_time="${SECONDS_PER_TARGET}" \
               -rss_limit_mb=4096
           done
 
