@@ -1,0 +1,103 @@
+name: Reference contract
+
+# The first-party reference contract under `reference-contract/`, rebuilt from source and
+# compared against the modules committed under `fixtures/reference/`.
+#
+# Why this is its own workflow rather than a step in `CI`: the build resolves the
+# `soroban-sdk` dependency tree and compiles two `cdylib` modules for `wasm32v1-none`,
+# which is a minute of work and a large tree to download. `CI` is the job that has to stay
+# fast enough to run on every change; this is the job that has to run whenever the thing
+# it checks could have moved, which is the contract sources, the fixture modules, the
+# build script and the pinned toolchain - hence the path filters below.
+#
+# What it proves, and why nothing else can: these fixtures are the compiled artefacts
+# themselves rather than hex inside a descriptor, so no test elsewhere in the repository
+# can tell whether a rebuild would still produce them. Without this job a fixture would
+# be a record of what the source built once, and the suite that reads it would be
+# agreeing with a copy rather than with the toolchain. The build is reproducible - same
+# pinned compiler, same target, same exactly-pinned SDK, same lock files - and this job
+# is what keeps that a checked property instead of an assumption.
+on:
+  push:
+    branches: [main]
+    paths:
+      - reference-contract/**
+      - scripts/build-reference-contract.sh
+      - fixtures/reference/**
+      - rust-toolchain.toml
+      - .github/workflows/reference.yml
+  pull_request:
+    paths:
+      - reference-contract/**
+      - scripts/build-reference-contract.sh
+      - fixtures/reference/**
+      - rust-toolchain.toml
+      - .github/workflows/reference.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reference-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rebuild:
+    name: the committed modules are what the source builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # `rustup show` reads `rust-toolchain.toml` and installs the compiler *and* the
+      # targets that file declares, which is why the target list is stated there rather
+      # than added by a `rustup target add` step here. The Soroban SDK's build script
+      # refuses `wasm32-unknown-unknown` outright - it enables `reference-types` and
+      # `multi-value`, which the environment does not support - so a toolchain carrying
+      # only that target fails the build below rather than producing a bad module.
+      - name: Install the pinned toolchain and its targets
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Rebuild the reference contract from source
+        run: scripts/build-reference-contract.sh
+
+      # The script stages what it built over the committed modules, so a rebuild that
+      # produces different bytes leaves those differences in the working tree. The
+      # assertion is that `git diff` over the directory is empty: it names the bytes that
+      # moved when they did, and passes without comment when they did not.
+      #
+      # A drift here is not automatically a defect - raising the SDK version, changing the
+      # contracts or bumping the compiler all legitimately change the output - but it is
+      # always a change that has to be recorded rather than absorbed, because the digests
+      # are asserted in `integration-tests/src/reference_contract.rs` and written into
+      # `fixtures/README.md`. The remedy is to update those alongside the modules, which
+      # is what the error text says.
+      - name: The committed modules are byte-for-byte what the source builds
+        run: |
+          set -euo pipefail
+          if ! git diff --exit-code -- fixtures/reference; then
+            echo "::error title=Reference fixtures have drifted::the modules committed under \
+          fixtures/reference/ are not what reference-contract/ builds. The digests printed by \
+          the build step are the new ones; update fixtures/reference/*.json, the constants in \
+          integration-tests/src/reference_contract.rs and fixtures/README.md together with them."
+            exit 1
+          fi
+          echo "the committed modules are byte-for-byte what the source builds"
+
+      # The constructed call graph, asserted with an oracle the engine is not part of: the
+      # SDK's own test host executes `caller -> callee`, so if this passes and the engine
+      # disagrees then the engine is wrong rather than the world. It runs on the host
+      # target rather than for wasm, which is why it is a separate command from the build.
+      - name: The reference contract's own call graph holds
+        run: cargo test --manifest-path reference-contract/caller/Cargo.toml
+
+      # And the engine reading the artefact the build just produced. This suite is what
+      # asserts the interface decoding, the section walk and the digest against bytes the
+      # pinned SDK emitted, rather than against a hand-assembled module.
+      - name: The engine reads the real artefact
+        run: cargo test --workspace --all-features --test reference
