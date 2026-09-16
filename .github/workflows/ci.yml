@@ -125,6 +125,22 @@ jobs:
           AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
         run: cargo test -p amasario-core --all-features -- --include-ignored
 
+      # `scripts/validate-profile.sh` was reachable only from `scripts/run-ci.sh`, and
+      # `run-ci.sh` is documented in `CONTRIBUTING.md` as mirroring this workflow step for
+      # step. It did not: the profile check existed at a contributor's discretion and
+      # nowhere in CI, so a profile naming a taxonomy file, a relationship id or a network
+      # type that the specification had moved on from would drift unnoticed until a
+      # consumer acted on a term that no longer meant what it used to. The profile's own
+      # header states the profile is validated - that statement is only true if something
+      # validates it, and this is that something.
+      #
+      # It needs the specification checkout the conformance step already makes, so it runs
+      # here rather than in a job of its own.
+      - name: Profile validation
+        env:
+          AMASARIO_SPEC_DIR: ${{ github.workspace }}/.amasario-spec
+        run: scripts/validate-profile.sh
+
       - name: Documentation builds without warnings
         run: cargo doc --workspace --no-deps --all-features --document-private-items
 
