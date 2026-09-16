@@ -380,6 +380,7 @@ reproduce each vector's canonical serialisation and digest byte for byte.
 | [`docs/security.md`](docs/security.md) | The security boundaries, stated as what the tool does not claim |
 | [`docs/fuzzing.md`](docs/fuzzing.md) | The five fuzz targets, what each asserts, and how a failure is read |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | Exit codes, and each failure mode with its cause and remedy |
+| [`docs/pitch-video.md`](docs/pitch-video.md) | The five-minute product walkthrough: scene-by-scene script, assets, and what it must land |
 | [`examples/README.md`](examples/README.md) | Nine worked examples, and which of them run without a network |
 
 Every page above documents this engine, and stays in this repository so that a change to
