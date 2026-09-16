@@ -317,13 +317,30 @@ impl WasmModule {
         .into_error())
     }
 
-    /// The names of the host functions the module imports from `env`.
+    /// The names of the host function imports whose namespace is literally `env`.
     ///
-    /// Only `env` imports are returned, and this is a protocol fact rather than a
-    /// convenience: Soroban host functions live in the `env` namespace, so an import
-    /// from another namespace is a build artefact of the toolchain rather than a
-    /// statement about the host interface. Returning them all and letting a caller
-    /// filter would invite the filter to be forgotten.
+    /// # This does not match what the pinned SDK emits, and the name is therefore a
+    /// # warning rather than a promise
+    ///
+    /// The method was written on the belief that Soroban host functions live in a
+    /// namespace called `env`, which made the namespace a protocol fact and the filter
+    /// a correct one. Measured against a module built by the pinned SDK, that belief is
+    /// wrong. `soroban-env-macros` does not declare the host function names at all: it
+    /// *generates* them by scheme - `_`, then `0`-`9`, `a`-`z`, `A`-`Z`, then the
+    /// cartesian product of that sequence, which the crate's own comment describes as
+    /// "enough to cover 4032 functions per module" - and generates the module name by
+    /// the same scheme. A real module therefore imports its host functions under names
+    /// such as `v.g` and `l.0`.
+    ///
+    /// The consequence is that this returns an empty vector for such a module. That is
+    /// asserted against a real module in `integration-tests/reference/reference.rs`,
+    /// so the limitation is recorded against an artefact rather than left to be
+    /// rediscovered. Recovering the host functions of a real module needs the mapping
+    /// from generated name to interface entry, which this crate does not carry.
+    ///
+    /// Nothing in the engine's analysis calls this method. It answers a question about
+    /// a module's imports and nothing more, and it should not be treated as an
+    /// inventory of the host surface a contract uses.
     #[must_use]
     pub fn host_function_imports(&self) -> Vec<&WasmImport> {
         self.imports

@@ -48,3 +48,11 @@ fuzz/artifacts/
 fuzz/coverage/
 fuzz/corpus/
 fuzz/target/
+
+# Reference contract build output. The built modules are committed under
+# `fixtures/reference/` because they are the artefacts the engine is asserted
+# against; everything in the two `target/` trees and the module the caller imports
+# is reproducible from source by `scripts/build-reference-contract.sh`.
+/reference-contract/callee/target/
+/reference-contract/caller/target/
+/reference-contract/caller/wasm/

@@ -1,0 +1,40 @@
+# The "callee" half of the first-party reference contract.
+#
+# This is a real, deployable Soroban contract. It exists so that the engine's
+# module-level analysis - `contractspecv0` decoding, `contractenvmetav0` reading,
+# section walking - is asserted against bytes the Soroban SDK actually produced,
+# rather than only against the hand-assembled modules in `fixtures/wasm/`.
+#
+# It declares its own `[workspace]` so that it is a standalone build root. Without
+# that, Cargo would walk up, find the engine's workspace, and refuse the package as
+# a non-member.
+[workspace]
+
+[package]
+name = "reference-callee"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+# `cdylib` is what makes the crate produce something deployable; `rlib` keeps it
+# usable as a Rust library for the test surface.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Pinned exactly: a fixture whose bytes are asserted against has to state the
+# toolchain that produced them, or the assertion drifts with the registry.
+soroban-sdk = "=27.0.6"
+
+[dev-dependencies]
+soroban-sdk = { version = "=27.0.6", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+overflow-checks = true
+# Deliberately not stripped. The `name` and other custom sections are real sections
+# the engine's parser has to walk, and stripping them would make the fixture less
+# representative than it can be.

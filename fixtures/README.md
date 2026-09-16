@@ -85,6 +85,15 @@ Provenance chains, including one whose deployment disagrees with its build and i
 * `unknown-source.json` - one link and no more, because the chain stops where the evidence does
 * `mismatched-wasm.json` - a deployment whose module digest disagrees with the built one, marked CONFLICTING
 
+### `reference/`
+
+Modules built from this repository's own Soroban contracts by `scripts/build-reference-contract.sh`, committed as the artefacts themselves with a JSON provenance record beside each. Every other module in this corpus is hand-assembled; these are what the pinned SDK actually emits, and they are therefore the only fixtures here that declare a contract interface. The two form a deliberate call graph: the caller invokes the callee.
+
+* `reference-callee.wasm` - 13895 byte(s), digest 347286105091f6d2d5db47ef5ae4442550a4d18f3a0f11284b59c22211031ac7; built from `reference-contract/callee` with soroban-sdk 27.0.6. the callee of the first-party reference contract: a real module the pinned SDK built, which declares an interface - the property the hand-assembled modules under wasm/ deliberately lack
+* `reference-callee.json` - the provenance record for the module above, checked against it
+* `reference-caller.wasm` - 9335 byte(s), digest 5b9002d177b278725322f3b9e9ab95322e35e802203579d946d00e9627ca9ef0; built from `reference-contract/caller` with soroban-sdk 27.0.6. the caller of the first-party reference contract: it invokes the callee across contracts, so the expected dependency edge is written down here rather than borrowed from a testnet contract this project does not own
+* `reference-caller.json` - the provenance record for the module above, checked against it
+
 ### `snapshots/`
 
 Two captures of one contract at one boundary, differing so that a diff has an added edge, a changed module digest and a changed confidence to report. The names are what the `Integration` workflow globs for when it exercises `amasario diff`.

@@ -1,0 +1,14 @@
+{
+  "name": "reference-caller",
+  "note": "the caller of the first-party reference contract: it invokes the callee across contracts, so the expected dependency edge is written down here rather than borrowed from a testnet contract this project does not own",
+  "buildsFrom": "reference-contract/caller",
+  "toolchain": {
+    "sorobanSdk": "27.0.6",
+    "rustc": "1.98.1",
+    "target": "wasm32v1-none"
+  },
+  "moduleFile": "reference-caller.wasm",
+  "byteSize": 9335,
+  "digest": "5b9002d177b278725322f3b9e9ab95322e35e802203579d946d00e9627ca9ef0",
+  "digestAlgorithm": "sha256"
+}

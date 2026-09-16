@@ -42,6 +42,7 @@ pub mod corpus_readme;
 pub mod documents;
 pub mod harness;
 pub mod recordings;
+pub mod reference_contract;
 pub mod wasm_modules;
 
 pub use corpus::Corpus;

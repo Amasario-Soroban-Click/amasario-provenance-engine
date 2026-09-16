@@ -13,6 +13,7 @@ use std::fmt::Write as _;
 use crate::captures;
 use crate::documents::{self, GraphKind, ImpactKind, ProvenanceKind, ReportKind, SetKind};
 use crate::recordings;
+use crate::reference_contract;
 use crate::wasm_modules;
 
 /// The corpus README's text.
@@ -126,6 +127,40 @@ pub fn render() -> String {
                 .iter()
                 .map(|kind| (format!("{}.json", kind.file()), describe_provenance(*kind)))
                 .collect(),
+        ),
+        (
+            "reference/",
+            "Modules built from this repository's own Soroban contracts by \
+             `scripts/build-reference-contract.sh`, committed as the artefacts themselves \
+             with a JSON provenance record beside each. Every other module in this corpus \
+             is hand-assembled; these are what the pinned SDK actually emits, and they are \
+             therefore the only fixtures here that declare a contract interface. The two \
+             form a deliberate call graph: the caller invokes the callee.",
+            {
+                let mut files: Vec<(String, String)> = Vec::new();
+                for module in [
+                    reference_contract::CALLEE_FILE,
+                    reference_contract::CALLER_FILE,
+                ] {
+                    let record = reference_contract::provenance(module);
+                    files.push((
+                        module.to_owned(),
+                        format!(
+                            "{} byte(s), digest {}; built from `{}` with soroban-sdk {}. {}",
+                            record.byte_size,
+                            record.digest,
+                            record.builds_from,
+                            record.toolchain.soroban_sdk,
+                            record.note
+                        ),
+                    ));
+                    files.push((
+                        format!("{}.json", module.trim_end_matches(".wasm")),
+                        "the provenance record for the module above, checked against it".to_owned(),
+                    ));
+                }
+                files
+            },
         ),
         (
             "snapshots/",

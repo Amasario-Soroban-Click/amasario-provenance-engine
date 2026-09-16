@@ -25,8 +25,13 @@ use amasario_integration_tests::documents::{
 use amasario_integration_tests::harness;
 use amasario_integration_tests::recordings;
 
-/// The nine fixture directories the repository structure names.
-const DIRECTORIES: [&str; 10] = [
+/// The fixture directories the repository structure names, in sorted order.
+///
+/// `reference` is the only one whose contents are not produced by
+/// `generate-fixtures`: it holds the modules this repository's own contracts build, with
+/// a provenance record beside each, and its records are checked against those modules
+/// rather than rebuilt from a model.
+const DIRECTORIES: [&str; 11] = [
     "contracts",
     "dependencies",
     "expected-reports",
@@ -34,6 +39,7 @@ const DIRECTORIES: [&str; 10] = [
     "impact",
     "ledgers",
     "provenance",
+    "reference",
     "snapshots",
     "transactions",
     "wasm",

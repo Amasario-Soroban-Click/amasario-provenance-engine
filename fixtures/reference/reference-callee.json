@@ -1,0 +1,14 @@
+{
+  "name": "reference-callee",
+  "note": "the callee of the first-party reference contract: a real module the pinned SDK built, which declares an interface - the property the hand-assembled modules under wasm/ deliberately lack",
+  "buildsFrom": "reference-contract/callee",
+  "toolchain": {
+    "sorobanSdk": "27.0.6",
+    "rustc": "1.98.1",
+    "target": "wasm32v1-none"
+  },
+  "moduleFile": "reference-callee.wasm",
+  "byteSize": 13895,
+  "digest": "347286105091f6d2d5db47ef5ae4442550a4d18f3a0f11284b59c22211031ac7",
+  "digestAlgorithm": "sha256"
+}

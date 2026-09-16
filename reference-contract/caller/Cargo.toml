@@ -1,0 +1,32 @@
+# The "caller" half of the first-party reference contract.
+#
+# This is the observable half of the constructed call graph: it holds no state of its
+# own and exists only to invoke the `callee`, so that a cross-contract dependency edge
+# between two contracts that are both *ours* can be asserted deterministically.
+#
+# `contractimport!` in `src/lib.rs` reads `wasm/reference_callee.wasm`, which the build
+# script compiles first and copies here. That ordering is the reason this is a separate
+# workspace rather than a second member of one.
+[workspace]
+
+[package]
+name = "reference-caller"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = "=27.0.6"
+
+[dev-dependencies]
+soroban-sdk = { version = "=27.0.6", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+overflow-checks = true

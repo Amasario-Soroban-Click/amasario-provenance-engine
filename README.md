@@ -13,6 +13,35 @@ there means the engine, or the world the committed target was chosen from, has c
 
 **Soroban contract dependency, provenance and impact infrastructure.**
 
+### The engine is not a contract, and it deploys nothing
+
+Amasario analyses Soroban contracts; it is not one. No crate in the engine's workspace
+depends on `soroban-sdk`, compiles to a deployable module, or declares a contract entry
+point, and no command submits a transaction, holds a key or signs anything. The
+organisation and the repository names say "Soroban" because that is the ecosystem this
+tooling is built for, and that is worth stating plainly rather than leaving a reader to
+search for an on-chain component of the engine that does not exist.
+
+The one contract in the tree is under [`reference-contract/`](reference-contract/), and it
+is a fixture rather than a product. A callee that records a sequence per account and a
+caller that invokes it across contracts are built from source by
+[`scripts/build-reference-contract.sh`](scripts/build-reference-contract.sh), and their
+modules are committed under [`fixtures/reference/`](fixtures/reference/) with a provenance
+record beside each. They exist because every other module in the corpus is hand-assembled,
+so nothing else exercises `contractspecv0` decoding, `contractenvmetav0` reading or the
+section walk against bytes the real toolchain emitted - and because the two form a
+deliberate call graph, `caller -> callee` is an edge the engine is asserted to find rather
+than borrowed from a contract on testnet that this project does not own. They are not part
+of the engine: nothing in the engine depends on them, and their build is its own workflow.
+
+The engine holding no contract of its own is what decides what is worth reviewing here.
+There is no authorisation surface, storage lifetime, upgrade path or arithmetic to audit,
+and no key handling of any kind, because the engine holds no key and signs nothing. What
+is worth reviewing is the surface [`SECURITY.md`](SECURITY.md) describes: parsing
+untrusted input without panicking, and never asserting more than the recorded evidence
+supports. Read this repository as read-only analysis infrastructure, and the rest of the
+documentation says what it will and will not claim about the contracts it examines.
+
 This repository is `amasario-provenance-engine`, the **execution and analysis layer**
 of Amasario. It consumes the normative models, schemas, rules and vectors defined by
 [`amasario-provenance-spec`](https://github.com/Amasario-Soroban-Click/amasario-provenance-spec)

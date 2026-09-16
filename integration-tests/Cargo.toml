@@ -36,6 +36,11 @@ path = "contracts/contracts.rs"
 harness = true
 
 [[test]]
+name = "reference"
+path = "reference/reference.rs"
+harness = true
+
+[[test]]
 name = "provenance"
 path = "provenance/provenance.rs"
 harness = true
