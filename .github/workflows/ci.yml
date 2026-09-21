@@ -28,7 +28,7 @@ jobs:
     name: format · clippy · test · doc · conformance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The normative specification, checked out so that the conformance test has
       # something to compare the engine's vocabularies against. Without it the
@@ -39,7 +39,7 @@ jobs:
       # access to it; `github.token` covers the public case, which is what a public
       # engine requires.
       - name: Check out the normative specification
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: Amasario-Soroban-Click/amasario-provenance-spec
           ref: main
