@@ -51,7 +51,7 @@ jobs:
     name: read-only analysis on a live network
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
         run: rustup show
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload the artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testnet-smoke
           path: artifacts/
@@ -96,7 +96,7 @@ jobs:
     name: a wrong endpoint is refused
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
         run: rustup show
